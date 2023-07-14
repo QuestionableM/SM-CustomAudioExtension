@@ -26,7 +26,7 @@ A dll that adds custom audio support for Scrap Mechanic mods
   "effectList": [
     {
       "type": "audio",
-      "name": "ExampleSoundName1"
+      "name": "ExampleSoundName"
     }
   ]
 }
