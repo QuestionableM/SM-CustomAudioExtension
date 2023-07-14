@@ -69,19 +69,6 @@ void load_sound_config(const std::string& key_repl)
 
 		SoundStorage::PreloadSound(v_sound_path, v_sound_name, is_sound_3d);
 	}
-
-	/*
-	"soundList": {
-		"CustomSoundName": {
-			"path": "$CONTENT_DATA/CustomAudio/1_2_Oatmeal.mp3",
-			"is3D": true
-		},
-		"CustomSoundName2": {
-			"path": "$CONTENT_DATA/CustomAudio/1_2_Oatmeal.mp3",
-			"is3D": false
-		}
-	}
-	*/
 }
 
 bool separate_key(std::string& path)
@@ -127,11 +114,47 @@ void Hooks::h_InitShapeManager(const char* file_data, unsigned int file_line)
 	return Hooks::o_InitShapeManager(file_data, file_line);
 }
 
+
+struct lua_State {};
+
+struct LuaVM
+{
+	lua_State* state;
+};
+
+using luaL_loadstring_func = int(*)(lua_State* state, const char* s);
+using lua_pcall_func = int(*)(lua_State* state, int nargs, int nresults, int errfunc);
+static luaL_loadstring_func luaL_loadstring_ptr = nullptr;
+static lua_pcall_func lua_pcall_ptr = nullptr;
+
+int __fastcall Hooks::h_LuaInitFunc(LuaVM* lua_vm, void** some_ptr, int some_number)
+{
+	const int v_result = Hooks::o_LuaInitFunc(lua_vm, some_ptr, some_number);
+	if (!v_result)
+	{
+		const int v_inject_result = luaL_loadstring_ptr(lua_vm->state, "unsafe_env.sm.dlm_injected = true\nsm.log.warning(unsafe_env)");
+		if (!v_inject_result)
+			return lua_pcall_ptr(lua_vm->state, 0, -1, 0);
+
+		return v_inject_result;
+	}
+
+	return v_result;
+}
+
 void Hooks::RunHooks()
 {
 	const std::uintptr_t v_module_handle = std::uintptr_t(GetModuleHandle(NULL));
 	const std::uintptr_t v_load_shapesets_addr = v_module_handle + 0x5C4250;
 	const std::uintptr_t v_init_shape_manager_addr = v_module_handle + 0x378170;
+	const std::uintptr_t v_lua_init_addr = v_module_handle + 0x5784D0;
+
+	HMODULE v_lua_dll = GetModuleHandleA("lua51.dll");
+	if (v_lua_dll)
+	{
+		luaL_loadstring_ptr = (luaL_loadstring_func)GetProcAddress(v_lua_dll, "luaL_loadstring");
+		lua_pcall_ptr = (lua_pcall_func)GetProcAddress(v_lua_dll, "lua_pcall");
+	}
 
 	if (MH_CreateHook(
 		(LPVOID)v_load_shapesets_addr,
@@ -147,5 +170,13 @@ void Hooks::RunHooks()
 		(LPVOID*)&Hooks::o_InitShapeManager) != MH_OK)
 	{
 		DebugErrorL("Couldn't hoook the lua manager init function!");
+	}
+
+	if (MH_CreateHook(
+		(LPVOID)v_lua_init_addr,
+		(LPVOID)Hooks::h_LuaInitFunc,
+		(LPVOID*)&Hooks::o_LuaInitFunc) != MH_OK)
+	{
+		DebugErrorL("Couldn't hook the lua init function!");
 	}
 }

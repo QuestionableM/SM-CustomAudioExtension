@@ -18,10 +18,7 @@ void dll_initialize()
 		if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK)
 			return;
 		
-		while (true)
-		{
-			Sleep(100);
-		}
+		while (true) { Sleep(100); }
 
 		MH_DisableHook(MH_ALL_HOOKS);
 		MH_Uninitialize();
@@ -30,7 +27,7 @@ void dll_initialize()
 
 void dll_entry_func(HMODULE module)
 {
-	Sleep(1500);
+	Sleep(100);
 	dll_initialize();
 
 	FreeLibraryAndExitThread(module, 0);
@@ -39,9 +36,14 @@ void dll_entry_func(HMODULE module)
 void dll_attach()
 {
 	AttachDebugConsole();
-	DebugOutL("DLM: Attached");
+	if (MH_Initialize() != MH_OK)
+	{
+		DebugErrorL("[DLM] Couldn't initialize MinHook!");
+		return;
+	}
 
 	FMODHooks::Hook();
+	Hooks::RunHooks();
 
 	MH_EnableHook(MH_ALL_HOOKS);
 }
