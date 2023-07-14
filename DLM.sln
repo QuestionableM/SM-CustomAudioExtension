@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DLM", "DLM.vcxproj", "{E167
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libMinHook", "libMinHook\libMinHook.vcxproj", "{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simdjson", "simdjson\simdjson.vcxproj", "{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +36,14 @@ Global
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Release|x64.Build.0 = Release|x64
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Release|x86.ActiveCfg = Release|Win32
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Release|x86.Build.0 = Release|Win32
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Debug|x64.ActiveCfg = Debug|x64
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Debug|x64.Build.0 = Debug|x64
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Debug|x86.ActiveCfg = Debug|Win32
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Debug|x86.Build.0 = Debug|Win32
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x64.ActiveCfg = Release|x64
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x64.Build.0 = Release|x64
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x86.ActiveCfg = Release|Win32
+		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

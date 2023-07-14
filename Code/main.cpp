@@ -13,6 +13,7 @@ void dll_initialize()
 	if (MH_Initialize() == MH_OK)
 	{
 		FMODHooks::Hook();
+		Hooks::RunHooks();
 
 		if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK)
 			return;

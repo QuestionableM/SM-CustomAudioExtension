@@ -68,11 +68,44 @@ struct FakeEventDescription
 	}
 };
 
+struct SoundData
+{
+	FMOD::Sound* sound;
+	bool is_3d;
+};
+
 class SoundStorage
 {
 public:
 	inline static std::unordered_map<std::size_t, std::string> HashToPath;
-	inline static std::unordered_map<std::size_t, FMOD::Sound*> HashToSound;
+
+	inline static std::unordered_map<std::size_t, FMOD::Sound*> PathHashToSound;
+	inline static std::unordered_map<std::size_t, SoundData> NameHashToSound;
+
+	inline static void ClearSounds()
+	{
+		for (auto& [sound_hash, sound_ptr] : SoundStorage::PathHashToSound)
+			sound_ptr->release();
+
+		SoundStorage::PathHashToSound.clear();
+		SoundStorage::NameHashToSound.clear();
+
+		SoundStorage::HashToPath.clear();
+	}
+
+	inline static bool SoundExists(std::size_t name_hash)
+	{
+		return SoundStorage::NameHashToSound.find(name_hash) != SoundStorage::NameHashToSound.end();
+	}
+
+	inline static SoundData* GetSoundData(std::size_t name_hash)
+	{
+		auto v_iter = SoundStorage::NameHashToSound.find(name_hash);
+		if (v_iter == SoundStorage::NameHashToSound.end())
+			return nullptr;
+
+		return &v_iter->second;
+	}
 
 	inline static std::size_t SavePath(const std::string& path)
 	{
@@ -86,11 +119,6 @@ public:
 		return v_string_hash;
 	}
 
-	inline static bool IsHashValid(std::size_t hash)
-	{
-		return SoundStorage::HashToPath.find(hash) != SoundStorage::HashToPath.end();
-	}
-
 	inline static bool GetPath(std::size_t hash, std::string& path)
 	{
 		auto v_iter = SoundStorage::HashToPath.find(hash);
@@ -102,6 +130,7 @@ public:
 	}
 
 	static FMOD::Sound* CreateSound(const std::string& path);
+	static void PreloadSound(const std::string& sound_path, const std::string& sound_name, bool is_3d);
 };
 
 class FMODHooks
@@ -135,7 +164,7 @@ public:
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_getPitch(FMOD::Studio::EventInstance* event_instance, float* pitch, float* finalpitch);
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_setPitch(FMOD::Studio::EventInstance* event_instance, float pitch);
 
-	//using CreateInstance = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventDescription*, FMOD::Studio::EventInstance**);
+	//FMOD EVENT DESCRIPTION HOOKS
 
 	inline static FEventDescription::GetLength o_FMOD_Studio_EventDescription_getLength = nullptr;
 	inline static FEventDescription::CreateInstance o_FMOD_Studio_EventDescription_createInstance = nullptr;
@@ -145,6 +174,7 @@ public:
 	static FMOD_RESULT h_FMOD_Studio_EventDescription_createInstance(FMOD::Studio::EventDescription* event_desc, FMOD::Studio::EventInstance** instance);
 	static FMOD_RESULT h_FMOD_Studio_EventDescription_hasSustainPoint(FMOD::Studio::EventDescription* event_desc, bool* has_sustain);
 
+	//FMOD STUDIO SYSTEM HOOKS
 
 	inline static FStudioSystem::LookupId o_FMOD_Studio_System_lookupID = nullptr;
 	inline static FStudioSystem::GetEventById o_FMOD_Studio_System_getEventByID = nullptr;

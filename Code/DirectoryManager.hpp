@@ -17,6 +17,16 @@ namespace SM
 			return *reinterpret_cast<DirectoryManager**>(std::uintptr_t(GetModuleHandle(NULL)) + 0x12A78F0);
 		}
 
+		inline bool get_replacement(const std::string& key, std::string& replacement)
+		{
+			auto v_iter = content_key_to_path_list.find(key);
+			if (v_iter == content_key_to_path_list.end())
+				return false;
+
+			replacement = v_iter->second;
+			return true;
+		}
+
 		inline bool replace_path_r(std::string& path)
 		{
 			if (path.empty() || path[0] != L'$')
@@ -44,6 +54,14 @@ namespace SM
 			if (!v_dir_mgr) return false;
 
 			return v_dir_mgr->replace_path_r(path);
+		}
+
+		inline static bool GetReplacement(const std::string& key, std::string& replacement)
+		{
+			SM::DirectoryManager* v_dir_mgr = SM::DirectoryManager::GetInstance();
+			if (!v_dir_mgr) return false;
+
+			return v_dir_mgr->get_replacement(key, replacement);
 		}
 
 	private:

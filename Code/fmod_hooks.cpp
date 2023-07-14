@@ -12,24 +12,51 @@
 
 #define FAKE_EVENT_CAST(event_name) reinterpret_cast<FakeEventDescription*>(event_name)
 
-
 FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 {
 	const std::size_t hash = std::hash<std::string>{}(path);
 
-	auto v_iter = SoundStorage::HashToSound.find(hash);
-	if (v_iter != SoundStorage::HashToSound.end())
+	auto v_iter = SoundStorage::PathHashToSound.find(hash);
+	if (v_iter != SoundStorage::PathHashToSound.end())
 		return v_iter->second;
 
 	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
-	if (!v_audio_mgr) return nullptr;
+	if (!v_audio_mgr)
+	{
+		DebugErrorL("AudioManager is not initialized!");
+		return nullptr;
+	}
 
 	FMOD::Sound* v_custom_sound;
 	if (v_audio_mgr->fmod_system->createSound(path.c_str(), FMOD_ACCURATETIME, nullptr, &v_custom_sound) != FMOD_OK)
+	{
+		DebugErrorL("Couldn't load the specified sound file: ", path);
 		return nullptr;
+	}
 
-	SoundStorage::HashToSound.emplace(hash, v_custom_sound);
+	DebugOutL(__FUNCTION__, " -> Loaded a sound: ", path);
+	SoundStorage::PathHashToSound.emplace(hash, v_custom_sound);
 	return v_custom_sound;
+}
+
+void SoundStorage::PreloadSound(const std::string& sound_path, const std::string& sound_name, bool is_3d)
+{
+	FMOD::Sound* v_sound = SoundStorage::CreateSound(sound_path);
+	if (!v_sound) return;
+	
+	const std::size_t v_name_hash = std::hash<std::string>{}(sound_name);
+
+	auto v_name_iter = SoundStorage::NameHashToSound.find(v_name_hash);
+	if (v_name_iter != SoundStorage::NameHashToSound.end())
+	{
+		DebugWarningL("The specified sound name is already occupied! (", sound_name, ")");
+		return;
+	}
+
+	SoundStorage::NameHashToSound.emplace(v_name_hash, SoundData{
+		.sound = v_sound,
+		.is_3d = is_3d
+	});
 }
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_release(FMOD::Studio::EventInstance* event_instance)
@@ -230,25 +257,25 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::Ev
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studio::EventDescription* event_desc, FMOD::Studio::EventInstance** instance)
 {
-	std::string v_sound_path;
-	if (SoundStorage::GetPath(reinterpret_cast<std::size_t>(event_desc), v_sound_path))
+	SoundData* v_sound_data = SoundStorage::GetSoundData(reinterpret_cast<std::size_t>(event_desc));
+	if (v_sound_data)
 	{
 		SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
 		if (v_audio_mgr)
 		{
-			FMOD::Sound* v_sound = SoundStorage::CreateSound(v_sound_path);
-			if (v_sound)
+			FMOD::Channel* v_channel;
+			if (v_audio_mgr->fmod_system->playSound(v_sound_data->sound, nullptr, false, &v_channel) == FMOD_OK)
 			{
-				FMOD::Channel* v_channel;
-				if (v_audio_mgr->fmod_system->playSound(v_sound, nullptr, false, &v_channel) == FMOD_OK)
+				//TODO: Add more config options later
+				if (v_sound_data->is_3d)
 				{
 					v_channel->setMode(FMOD_3D);
-
-					FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound, v_channel);
-					*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
-
-					return FMOD_OK;
 				}
+
+				FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data->sound, v_channel);
+				*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
+
+				return FMOD_OK;
 			}
 		}
 	}
@@ -282,14 +309,12 @@ union FAKE_GUID_DATA
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_System_lookupID(FMOD::Studio::System* system, const char* path, FMOD_GUID* id)
 {
-	std::string v_replaced_path = path;
-	SM::DirectoryManager::ReplacePathR(v_replaced_path);
-
-	if (File::Exists(v_replaced_path))
+	const std::size_t sound_hash = std::hash<std::string>{}(std::string(path));
+	if (SoundStorage::SoundExists(sound_hash))
 	{
 		FAKE_GUID_DATA* v_fake_guid = reinterpret_cast<FAKE_GUID_DATA*>(id);
 
-		v_fake_guid->fake.v_hash = SoundStorage::SavePath(v_replaced_path);
+		v_fake_guid->fake.v_hash = sound_hash;
 		v_fake_guid->fake.v_secret = FMOD_HOOK_FAKE_GUID_SECRET;
 
 		return FMOD_OK;
@@ -303,7 +328,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_System_getEventByID(FMOD::Studio::System* s
 	const FAKE_GUID_DATA* v_guid_data = reinterpret_cast<const FAKE_GUID_DATA*>(id);
 	if (v_guid_data->fake.v_secret == FMOD_HOOK_FAKE_GUID_SECRET)
 	{
-		if (SoundStorage::IsHashValid(v_guid_data->fake.v_hash))
+		if (SoundStorage::SoundExists(v_guid_data->fake.v_hash))
 		{
 			*event_id = reinterpret_cast<FMOD::Studio::EventDescription*>(v_guid_data->fake.v_hash);
 			return FMOD_OK;
