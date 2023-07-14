@@ -29,6 +29,7 @@ namespace FEventDescription
 {
 	using GetLength = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventDescription*, int*);
 	using CreateInstance = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventDescription*, FMOD::Studio::EventInstance**);
+	using HasSustainPoint = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventDescription*, bool*);
 }
 
 namespace FStudioSystem
@@ -60,7 +61,11 @@ struct FakeEventDescription
 		return v_secret_number == FAKE_EVENT_DESC_MAGIC;
 	}
 
-	FMOD_RESULT release() { return FMOD_OK;/*return sound->release();*/ }
+	FMOD_RESULT release()
+	{
+		delete this;
+		return FMOD_OK;/*return sound->release();*/
+	}
 };
 
 class SoundStorage
@@ -134,9 +139,11 @@ public:
 
 	inline static FEventDescription::GetLength o_FMOD_Studio_EventDescription_getLength = nullptr;
 	inline static FEventDescription::CreateInstance o_FMOD_Studio_EventDescription_createInstance = nullptr;
+	inline static FEventDescription::HasSustainPoint o_FMOD_Studio_EventDescription_hasSustainPoint = nullptr;
 
 	static FMOD_RESULT h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::EventDescription* event_desc, int* length);
 	static FMOD_RESULT h_FMOD_Studio_EventDescription_createInstance(FMOD::Studio::EventDescription* event_desc, FMOD::Studio::EventInstance** instance);
+	static FMOD_RESULT h_FMOD_Studio_EventDescription_hasSustainPoint(FMOD::Studio::EventDescription* event_desc, bool* has_sustain);
 
 
 	inline static FStudioSystem::LookupId o_FMOD_Studio_System_lookupID = nullptr;

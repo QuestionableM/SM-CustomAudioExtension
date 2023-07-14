@@ -36,10 +36,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_release(FMOD::Studio::EventIn
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
-	{
-		DebugOutL(__FUNCTION__, " -> ", (std::size_t)event_instance);
 		return v_fake_event->release();
-	}
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_release(event_instance);
 }
@@ -49,8 +46,6 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInst
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		DebugOutL(__FUNCTION__);
-
 		bool is_playing = false;
 		v_fake_event->channel->isPlaying(&is_playing);
 
@@ -248,10 +243,10 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 				if (v_audio_mgr->fmod_system->playSound(v_sound, nullptr, false, &v_channel) == FMOD_OK)
 				{
 					v_channel->setMode(FMOD_3D);
-				//	v_channel->set3DMinMaxDistance(0.0f, 500.0f);
 
 					FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound, v_channel);
 					*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
+
 					return FMOD_OK;
 				}
 			}
@@ -259,6 +254,18 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 	}
 
 	return FMODHooks::o_FMOD_Studio_EventDescription_createInstance(event_desc, instance);
+}
+
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_hasSustainPoint(FMOD::Studio::EventDescription* event_desc, bool* has_sustain)
+{
+	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_desc);
+	if (v_fake_event->isValidHook())
+	{
+		*has_sustain = false;
+		return FMOD_OK;
+	}
+
+	return FMODHooks::o_FMOD_Studio_EventDescription_hasSustainPoint(event_desc, has_sustain);
 }
 
 #define FMOD_HOOK_FAKE_GUID_SECRET 0xf0f0f0f0f0f0f0f0
@@ -288,7 +295,6 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_System_lookupID(FMOD::Studio::System* syste
 		return FMOD_OK;
 	}
 
-	DebugOutL("Lookup id: ", path);
 	return FMODHooks::o_FMOD_Studio_System_lookupID(system, path, id);
 }
 
@@ -400,6 +406,11 @@ static FMODHookData g_fmodHookData[] =
 		"?createInstance@EventDescription@Studio@FMOD@@QEBA?AW4FMOD_RESULT@@PEAPEAVEventInstance@23@@Z",
 		(LPVOID)FMODHooks::h_FMOD_Studio_EventDescription_createInstance,
 		(LPVOID*)&FMODHooks::o_FMOD_Studio_EventDescription_createInstance
+	},
+	{
+		"?hasSustainPoint@EventDescription@Studio@FMOD@@QEBA?AW4FMOD_RESULT@@PEA_N@Z",
+		(LPVOID)FMODHooks::h_FMOD_Studio_EventDescription_hasSustainPoint,
+		(LPVOID*)&FMODHooks::o_FMOD_Studio_EventDescription_hasSustainPoint
 	}
 };
 
