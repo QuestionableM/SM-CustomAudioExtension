@@ -132,7 +132,7 @@ int __fastcall Hooks::h_LuaInitFunc(LuaVM* lua_vm, void** some_ptr, int some_num
 	const int v_result = Hooks::o_LuaInitFunc(lua_vm, some_ptr, some_number);
 	if (!v_result)
 	{
-		const int v_inject_result = luaL_loadstring_ptr(lua_vm->state, "unsafe_env.sm.dlm_injected = true\nsm.log.warning(unsafe_env)");
+		const int v_inject_result = luaL_loadstring_ptr(lua_vm->state, "unsafe_env.sm.dlm_injected = true");
 		if (!v_inject_result)
 			return lua_pcall_ptr(lua_vm->state, 0, -1, 0);
 
