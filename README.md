@@ -31,3 +31,4 @@ A dll that adds custom audio support for Scrap Mechanic mods
   ]
 }
 ```
+- If you want to add DLM specific effects you can use the `sm.dlm_injected` flag to check if the DLM is present
