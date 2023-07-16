@@ -2,8 +2,8 @@
 
 #include "fmod_hooks.hpp"
 
-#include "DirectoryManager.hpp"
-#include "AudioManager.hpp"
+#include "SM/DirectoryManager.hpp"
+#include "SM/AudioManager.hpp"
 
 #include "Utils/Console.hpp"
 #include "Utils/String.hpp"
@@ -38,7 +38,7 @@ void load_sound_config(const std::string& key_repl)
 	simdjson::dom::document v_document;
 	if (!JsonReader::LoadParseSimdjsonCommentsC(v_wide_path, v_document, simdjson::dom::element_type::OBJECT))
 	{
-		DebugErrorL("[DLM] Couldn't load the DLM sound config file: ", config_path);
+		DebugErrorL("Couldn't load the DLM sound config file: ", config_path);
 		return;
 	}
 
@@ -46,7 +46,7 @@ void load_sound_config(const std::string& key_repl)
 	const auto v_sound_list = v_root["soundList"];
 	if (!v_sound_list.is_object())
 	{
-		DebugErrorL("[DLM] No sound list: ", config_path);
+		DebugErrorL("No sound list: ", config_path);
 		return;
 	}
 

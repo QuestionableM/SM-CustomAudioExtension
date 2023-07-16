@@ -1,7 +1,8 @@
 #include "fmod_hooks.hpp"
 
-#include "DirectoryManager.hpp"
-#include "AudioManager.hpp"
+#include "SM/DirectoryManager.hpp"
+#include "SM/AudioManager.hpp"
+#include "SM/GameSettings.hpp"
 
 #include "win_include.hpp"
 
@@ -166,7 +167,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(FMOD::Studio::Event
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		v_fake_event->channel->setVolume(volume);
+		v_fake_event->channel->setVolume(SM::GameSettings::GetEffectsVolume() * volume);
 		return FMOD_OK;
 	}
 
@@ -246,6 +247,31 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setPitch(FMOD::Studio::EventI
 	return FMODHooks::o_FMOD_Studio_EventInstance_setPitch(event_instance, pitch);
 }
 
+using v_fmod_set_parameter_function = FMOD_RESULT(*)(FakeEventDescription* fake_event, float value);
+
+static FMOD_RESULT fake_event_desc_setPitch(FakeEventDescription* fake_event, float value)
+{
+	return fake_event->channel->setPitch(value);
+}
+
+inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_fake_event_parameter_table =
+{
+	{ "DLM_Pitch", fake_event_desc_setPitch }
+};
+
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed)
+{
+	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
+	if (v_fake_event->isValidHook())
+	{
+		auto v_iter = g_fake_event_parameter_table.find(std::string(name));
+		if (v_iter != g_fake_event_parameter_table.end())
+			return v_iter->second(v_fake_event, value);
+	}
+
+	return FMODHooks::o_FMOD_Studio_EventInstance_setParameterByName(event_instance, name, value, ignoreseekspeed);
+}
+
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::EventDescription* event_desc, int* length)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_desc);
@@ -270,6 +296,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 				if (v_sound_data->is_3d)
 				{
 					v_channel->setMode(FMOD_3D);
+					v_channel->setVolume(SM::GameSettings::GetEffectsVolume());
 				}
 
 				FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data->sound, v_channel);
@@ -436,6 +463,11 @@ static FMODHookData g_fmodHookData[] =
 		"?hasSustainPoint@EventDescription@Studio@FMOD@@QEBA?AW4FMOD_RESULT@@PEA_N@Z",
 		(LPVOID)FMODHooks::h_FMOD_Studio_EventDescription_hasSustainPoint,
 		(LPVOID*)&FMODHooks::o_FMOD_Studio_EventDescription_hasSustainPoint
+	},
+	{
+		"?setParameterByName@EventInstance@Studio@FMOD@@QEAA?AW4FMOD_RESULT@@PEBDM_N@Z",
+		(LPVOID)FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName,
+		(LPVOID*)&FMODHooks::o_FMOD_Studio_EventInstance_setParameterByName
 	}
 };
 

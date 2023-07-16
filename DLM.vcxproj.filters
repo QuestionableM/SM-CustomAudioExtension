@@ -21,10 +21,10 @@
     <ClCompile Include="Code\Utils\Console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Code\fmod_hooks.cpp">
+    <ClCompile Include="Code\Hooks\fmod_hooks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Code\hooks.cpp">
+    <ClCompile Include="Code\Hooks\hooks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Code\Utils\Json.cpp">
@@ -41,16 +41,16 @@
     <ClInclude Include="Code\win_include.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Code\hooks.hpp">
+    <ClInclude Include="Code\Hooks\hooks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Code\fmod_hooks.hpp">
+    <ClInclude Include="Code\Hooks\fmod_hooks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Code\AudioManager.hpp">
+    <ClInclude Include="Code\SM\AudioManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Code\DirectoryManager.hpp">
+    <ClInclude Include="Code\SM\DirectoryManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Code\Utils\File.hpp">
@@ -60,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Code\Utils\String.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\SM\GameSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,5 @@
 #pragma once
 
-#if defined(_DEBUG) || !defined(_DEBUG)
-
 #include "win_include.hpp"
 #include "ConColors.hpp"
 
@@ -48,15 +46,9 @@ namespace Engine
 			Console::Output<const char*>("\n");
 		}
 
-		static bool CreateEngineConsole(const wchar_t* title);
-		static bool AttachToConsole();
-		void DestroyConsole();
-
 		static __ConsoleOutputHandler Out;
 
 	private:
-		static HANDLE Handle;
-
 		template<class T>
 		inline static void Output(const T arg)
 		{
@@ -88,13 +80,7 @@ namespace Engine
 	{
 		inline static void Output(const wchar_t* arg)
 		{
-		#if defined(ENGINE_ENABLE_CUSTOM_CONSOLE_WINDOW) || !defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			WriteConsoleW(Console::Handle, arg, static_cast<DWORD>(wcslen(arg)), NULL, NULL);
-		#endif
-
-		#if defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			OutputDebugStringW(arg);
-		#endif
+			WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), arg, static_cast<DWORD>(wcslen(arg)), NULL, NULL);
 		}
 	};
 
@@ -103,13 +89,7 @@ namespace Engine
 	{
 		inline static void Output(const char* arg)
 		{
-		#if defined(ENGINE_ENABLE_CUSTOM_CONSOLE_WINDOW) || !defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			WriteConsoleA(Console::Handle, arg, static_cast<DWORD>(strlen(arg)), NULL, NULL);
-		#endif
-
-		#if defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			OutputDebugStringA(arg);
-		#endif
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), arg, static_cast<DWORD>(strlen(arg)), NULL, NULL);
 		}
 	};
 
@@ -118,13 +98,7 @@ namespace Engine
 	{
 		inline static void Output(const std::wstring& msg)
 		{
-		#if defined(ENGINE_ENABLE_CUSTOM_CONSOLE_WINDOW) || !defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			WriteConsoleW(Console::Handle, msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
-		#endif
-
-		#if defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			OutputDebugStringW(msg.data());
-		#endif
+			WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
 		}
 	};
 	
@@ -133,13 +107,7 @@ namespace Engine
 	{
 		inline static void Output(const std::string& msg)
 		{
-		#if defined(ENGINE_ENABLE_CUSTOM_CONSOLE_WINDOW) || !defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			WriteConsoleA(Console::Handle, msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
-		#endif
-
-		#if defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-			OutputDebugStringA(msg.data());
-		#endif
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
 		}
 	};
 
@@ -158,7 +126,7 @@ namespace Engine
 	QE_CREATE_CON_NUMBER_TYPE(double);
 
 	QE_CREATE_CON_OUTPUT_TYPE(void (*)(), void (*func_ptr)(), { func_ptr(); });
-	QE_CREATE_CON_OUTPUT_TYPE(EngineConColor, const EngineConColor& color, { SetConsoleTextAttribute(Console::Handle, static_cast<WORD>(color)); });
+	QE_CREATE_CON_OUTPUT_TYPE(EngineConColor, const EngineConColor& color, { SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), static_cast<WORD>(color));});
 	QE_CREATE_CON_OUTPUT_TYPE(bool, const bool& bool_val, { ConsoleOutputType<std::string>::Output(bool_val ? "true" : "false"); });
 
 	//-------------CONSOLE OUTPUT HANDLER------------------
@@ -197,29 +165,8 @@ namespace Engine
 	};
 }
 
-	#if defined(ENGINE_ENABLE_CUSTOM_CONSOLE_WINDOW) || !defined(ENGINE_ENABLE_VS_CONSOLE_OUTPUT)
-		#define CreateDebugConsole(title) Engine::Console::CreateEngineConsole(title)
-		#define AttachDebugConsole() Engine::Console::AttachToConsole()
-	#else
-		#define CreateDebugConsole(...) ((void*)0)
-		#define AttachDebugConsole(...) ((void*)0)
-	#endif
-
 #define DebugOut(...)  Engine::Console::Out(__VA_ARGS__)
-#define DebugOutL(...) Engine::Console::Out(__VA_ARGS__, Engine::Console::Endl)
+#define DebugOutL(...) Engine::Console::Out("[DLM] ", __VA_ARGS__, Engine::Console::Endl)
 
-#define DebugWarningL(...) Engine::Console::Out(0b1101_fg, "WARNING: ", __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
-#define DebugErrorL(...)   Engine::Console::Out(0b1001_fg, "ERROR: "  , __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
-#else
-#define CreateDebugConsole(title) ((void*)0)
-#define AttachDebugConsole(...) ((void*)0)
-
-#define DebugOut(...)  ((void*)0)
-#define DebugOutL(...) ((void*)0)
-
-#define DebugWarningL(...) ((void*)0)
-#define DebugErrorL(...)   ((void*)0)
-
-#define QE_CREATE_CON_OUTPUT_TYPE(...)   ((void*)0)
-#define QE_CREATE_CON_NUMBER_TYPE(...)   ((void*)0)
-#endif //EngineNamespace
+#define DebugWarningL(...) Engine::Console::Out(0b1101_fg, "[DLM] WARNING: ", __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
+#define DebugErrorL(...)   Engine::Console::Out(0b1001_fg, "[DLM] ERROR: "  , __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)

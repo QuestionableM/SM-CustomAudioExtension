@@ -23,6 +23,7 @@ namespace FEventInstance
 	using SetTimelinePosition = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventInstance*, int);
 	using GetPitch = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventInstance*, float*, float*);
 	using SetPitch = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventInstance*, float);
+	using SetParameterByName = FMOD_RESULT(__fastcall*)(FMOD::Studio::EventInstance*, const char*, float, bool);
 }
 
 namespace FEventDescription
@@ -149,6 +150,7 @@ public:
 	inline static FEventInstance::SetTimelinePosition o_FMOD_Studio_EventInstance_setTimelinePosition = nullptr;
 	inline static FEventInstance::GetPitch o_FMOD_Studio_EventInstance_getPitch = nullptr;
 	inline static FEventInstance::SetPitch o_FMOD_Studio_EventInstance_setPitch = nullptr;
+	inline static FEventInstance::SetParameterByName o_FMOD_Studio_EventInstance_setParameterByName = nullptr;
 
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_release(FMOD::Studio::EventInstance* event_instance);
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInstance* event_instance);
@@ -163,6 +165,7 @@ public:
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_setTimelinePosition(FMOD::Studio::EventInstance* event_instance, int position);
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_getPitch(FMOD::Studio::EventInstance* event_instance, float* pitch, float* finalpitch);
 	static FMOD_RESULT h_FMOD_Studio_EventInstance_setPitch(FMOD::Studio::EventInstance* event_instance, float pitch);
+	static FMOD_RESULT h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed);
 
 	//FMOD EVENT DESCRIPTION HOOKS
 
