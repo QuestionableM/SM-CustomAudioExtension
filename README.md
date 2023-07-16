@@ -11,7 +11,8 @@ A dll that adds custom audio support for Scrap Mechanic mods
     //You can reference the same sound multiple times, but configure them differently
     "ExampleSoundName": {
       "path": "$CONTENT_DATA/Effects/Audio/example_sound.mp3",
-      "is3D": true
+      "is3D": true,
+      "reverb": "MOUNTAINS", //Reverb is optional, possible parameters: GENERIC, MOUNTAINS, CAVE, UNDERWATER
     },
     "ExampleSoundName2": {
       "path": "$CONTENT_DATA/Effects/Audio/example_sound.mp3",
@@ -23,10 +24,17 @@ A dll that adds custom audio support for Scrap Mechanic mods
 - The names specified in `sm_dlm_config.json` can then be used in effects!
 ```json
 "ExampleEffect": {
+  "parameterList": {
+    "DLM_Volume": 1.0f,
+    "DLM_Pitch": 1.0f,
+    "DLM_Reverb": 1.0f,
+    "DLM_ReverbIdx": -1.0f
+  },
   "effectList": [
     {
       "type": "audio",
-      "name": "ExampleSoundName"
+      "name": "ExampleSoundName",
+      "parameters": [ "DLM_Volume", "DLM_Pitch", "DLM_Reverb", "DLM_ReverbIdx" ]
     }
   ]
 }
