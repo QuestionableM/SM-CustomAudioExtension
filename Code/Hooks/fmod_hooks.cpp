@@ -13,6 +13,23 @@
 
 #define FAKE_EVENT_CAST(event_name) reinterpret_cast<FakeEventDescription*>(event_name)
 
+FMOD_RESULT FakeEventDescription::setVolume(float new_volume)
+{
+	this->custom_volume = new_volume;
+	return this->updateVolume();
+}
+
+FMOD_RESULT FakeEventDescription::updateVolume()
+{
+	return this->channel->setVolume(this->custom_volume * SM::GameSettings::GetEffectsVolume());
+}
+
+void FakeEventDescription::updateReverbData()
+{
+	for (int a = 0; a < 4; a++)
+		this->channel->setReverbProperties(a, (this->reverb_idx == a) ? 1.0f : 0.0f);
+}
+
 FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 {
 	const std::size_t hash = std::hash<std::string>{}(path);
@@ -40,7 +57,7 @@ FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 	return v_custom_sound;
 }
 
-void SoundStorage::PreloadSound(const std::string& sound_path, const std::string& sound_name, bool is_3d)
+void SoundStorage::PreloadSound(const std::string& sound_path, const std::string& sound_name, const SoundEffectData& effect_data)
 {
 	FMOD::Sound* v_sound = SoundStorage::CreateSound(sound_path);
 	if (!v_sound) return;
@@ -56,7 +73,7 @@ void SoundStorage::PreloadSound(const std::string& sound_path, const std::string
 
 	SoundStorage::NameHashToSound.emplace(v_name_hash, SoundData{
 		.sound = v_sound,
-		.is_3d = is_3d
+		.effect_data = effect_data
 	});
 }
 
@@ -76,9 +93,6 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInst
 	{
 		bool is_playing = false;
 		v_fake_event->channel->isPlaying(&is_playing);
-
-		FMOD::ChannelGroup* v_channel_group = nullptr;
-		v_fake_event->channel->getChannelGroup(&v_channel_group);
 
 		if (!is_playing)
 		{
@@ -167,7 +181,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(FMOD::Studio::Event
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		v_fake_event->channel->setVolume(SM::GameSettings::GetEffectsVolume() * volume);
+		v_fake_event->updateVolume();
 		return FMOD_OK;
 	}
 
@@ -254,9 +268,37 @@ static FMOD_RESULT fake_event_desc_setPitch(FakeEventDescription* fake_event, fl
 	return fake_event->channel->setPitch(value);
 }
 
+static FMOD_RESULT fake_event_desc_setVolume(FakeEventDescription* fake_event, float volume)
+{
+	return fake_event->setVolume(volume);
+}
+
+static FMOD_RESULT fake_event_desc_setReverb(FakeEventDescription* fake_event, float reverb)
+{
+	if (fake_event->reverb_idx == -1)
+		return FMOD_OK;
+
+	return fake_event->channel->setReverbProperties(fake_event->reverb_idx, reverb);
+}
+
+static FMOD_RESULT fake_event_desc_setReverbIndex(FakeEventDescription* fake_event, float reverb_idx)
+{
+	const int v_reverb_idx = static_cast<int>(reverb_idx);
+	if (v_reverb_idx >= 0 && v_reverb_idx <= 3)
+		fake_event->reverb_idx = v_reverb_idx;
+	else
+		fake_event->reverb_idx = -1;
+
+	fake_event->updateReverbData();
+	return FMOD_OK;
+}
+
 inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_fake_event_parameter_table =
 {
-	{ "DLM_Pitch", fake_event_desc_setPitch }
+	{ "DLM_Pitch"    , fake_event_desc_setPitch       },
+	{ "DLM_Volume"   , fake_event_desc_setVolume      },
+	{ "DLM_Reverb"   , fake_event_desc_setReverb      },
+	{ "DLM_ReverbIdx", fake_event_desc_setReverbIndex }
 };
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed)
@@ -292,14 +334,18 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 			FMOD::Channel* v_channel;
 			if (v_audio_mgr->fmod_system->playSound(v_sound_data->sound, nullptr, false, &v_channel) == FMOD_OK)
 			{
+				v_channel->setVolume(SM::GameSettings::GetEffectsVolume());
+
+				v_channel->set3DMinMaxDistance(0.0f, 5000.0f);
+
 				//TODO: Add more config options later
-				if (v_sound_data->is_3d)
-				{
+				if (v_sound_data->effect_data.is_3d)
 					v_channel->setMode(FMOD_3D);
-					v_channel->setVolume(SM::GameSettings::GetEffectsVolume());
-				}
 
 				FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data->sound, v_channel);
+				v_new_fake_event->reverb_idx = v_sound_data->effect_data.reverb_idx;
+				v_new_fake_event->updateReverbData();
+
 				*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
 
 				return FMOD_OK;
@@ -470,6 +516,23 @@ static FMODHookData g_fmodHookData[] =
 		(LPVOID*)&FMODHooks::o_FMOD_Studio_EventInstance_setParameterByName
 	}
 };
+
+void FMODHooks::UpdateReverbProperties()
+{
+	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
+	if (!v_audio_mgr) return;
+
+	DebugOutL("Injecting reverb properties");
+
+	FMOD_REVERB_PROPERTIES v_reverb_preset = FMOD_PRESET_MOUNTAINS;
+	v_audio_mgr->fmod_system->setReverbProperties(0, &v_reverb_preset);
+	FMOD_REVERB_PROPERTIES v_reverb_preset2 = FMOD_PRESET_CAVE;
+	v_audio_mgr->fmod_system->setReverbProperties(1, &v_reverb_preset2);
+	FMOD_REVERB_PROPERTIES v_reverb_preset3 = FMOD_PRESET_GENERIC;
+	v_audio_mgr->fmod_system->setReverbProperties(2, &v_reverb_preset3);
+	FMOD_REVERB_PROPERTIES v_reverb_preset4 = FMOD_PRESET_UNDERWATER;
+	v_audio_mgr->fmod_system->setReverbProperties(3, &v_reverb_preset4);
+}
 
 void FMODHooks::Hook()
 {

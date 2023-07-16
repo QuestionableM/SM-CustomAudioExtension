@@ -28,6 +28,38 @@ void replace_content_key_data(std::string& path, const std::string& key_repl)
 	path = key_repl + path.substr(v_slash_idx);
 }
 
+inline static std::unordered_map<std::string, int> g_reverbStringToIdx =
+{
+	{ "MOUNTAINS" , 0 },
+	{ "CAVE"      , 1 },
+	{ "GENERIC"   , 2 },
+	{ "UNDERWATER", 3 }
+};
+
+int get_reverb_setting(const simdjson::dom::document_stream::iterator::value_type& v_reverb_data)
+{
+	if (!v_reverb_data.is_string())
+		return -1;
+
+	std::string_view v_reverb_string_view = v_reverb_data.get_string();
+	std::string v_reverb_str(v_reverb_string_view.data(), v_reverb_string_view.size());
+
+	auto v_iter = g_reverbStringToIdx.find(v_reverb_str);
+	if (v_iter == g_reverbStringToIdx.end())
+		return -1;
+
+	return v_iter->second;
+}
+
+void load_effect_data(const simdjson::dom::element& cur_sound, SoundEffectData& effect_data)
+{
+	const auto v_sound_is_3d_node = cur_sound["is3D"];
+	const auto v_reverb_node = cur_sound["reverb"];
+
+	effect_data.is_3d = v_sound_is_3d_node.is_bool() ? v_sound_is_3d_node.get_bool().value() : false;
+	effect_data.reverb_idx = get_reverb_setting(v_reverb_node);
+}
+
 void load_sound_config(const std::string& key_repl)
 {
 	const std::string config_path = key_repl + "/sm_dlm_config.json";
@@ -50,24 +82,24 @@ void load_sound_config(const std::string& key_repl)
 		return;
 	}
 
+	SoundEffectData v_effect_data;
+
 	for (auto& v_sound_list : v_sound_list.get_object())
 	{
 		if (!v_sound_list.value.is_object())
 			continue;
 
 		const auto v_sound_path_node = v_sound_list.value["path"];
-		const auto v_sound_is_3d_node = v_sound_list.value["is3D"];
-
 		if (!v_sound_path_node.is_string())
 			continue;
 
-		const bool is_sound_3d = v_sound_is_3d_node.is_bool() ? v_sound_is_3d_node.get_bool().value() : false;
-		const std::string v_sound_name(v_sound_list.key.data(), v_sound_list.key.size());
+		load_effect_data(v_sound_list.value, v_effect_data);
 
 		std::string v_sound_path(v_sound_path_node.get_string().value().data());
 		replace_content_key_data(v_sound_path, key_repl);
 
-		SoundStorage::PreloadSound(v_sound_path, v_sound_name, is_sound_3d);
+		const std::string v_sound_name(v_sound_list.key.data(), v_sound_list.key.size());
+		SoundStorage::PreloadSound(v_sound_path, v_sound_name, v_effect_data);
 	}
 }
 
@@ -109,7 +141,9 @@ void Hooks::h_LoadShapesetsFunction(void* shape_manager, const std::string& shap
 void Hooks::h_InitShapeManager(const char* file_data, unsigned int file_line)
 {
 	DebugOutL(__FUNCTION__, " -> Clearing sounds!");
+
 	SoundStorage::ClearSounds();
+	FMODHooks::UpdateReverbProperties();
 
 	return Hooks::o_InitShapeManager(file_data, file_line);
 }

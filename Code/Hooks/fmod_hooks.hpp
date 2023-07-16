@@ -48,11 +48,19 @@ struct FakeEventDescription
 	FMOD::Sound* sound = nullptr;
 	FMOD::Channel* channel = nullptr;
 
+	float custom_volume = 1.0f;
+	int reverb_idx = -1;
+
 	FakeEventDescription(FMOD::Sound* v_sound, FMOD::Channel* v_channel)
 	{
 		this->sound = v_sound;
 		this->channel = v_channel;
 	}
+
+	FMOD_RESULT setVolume(float new_volume);
+	FMOD_RESULT updateVolume();
+
+	void updateReverbData();
 
 	bool isValidHook() const
 	{
@@ -69,10 +77,16 @@ struct FakeEventDescription
 	}
 };
 
+struct SoundEffectData
+{
+	bool is_3d;
+	int reverb_idx;
+};
+
 struct SoundData
 {
 	FMOD::Sound* sound;
-	bool is_3d;
+	SoundEffectData effect_data;
 };
 
 class SoundStorage
@@ -131,7 +145,7 @@ public:
 	}
 
 	static FMOD::Sound* CreateSound(const std::string& path);
-	static void PreloadSound(const std::string& sound_path, const std::string& sound_name, bool is_3d);
+	static void PreloadSound(const std::string& sound_path, const std::string& sound_name, const SoundEffectData& effect_data);
 };
 
 class FMODHooks
@@ -184,6 +198,8 @@ public:
 
 	static FMOD_RESULT h_FMOD_Studio_System_lookupID(FMOD::Studio::System* system, const char* path, FMOD_GUID* id);
 	static FMOD_RESULT h_FMOD_Studio_System_getEventByID(FMOD::Studio::System* system, const FMOD_GUID* id, FMOD::Studio::EventDescription** event_id);
+
+	static void UpdateReverbProperties();
 
 	static void Hook();
 };
