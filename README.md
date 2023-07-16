@@ -25,10 +25,10 @@ A dll that adds custom audio support for Scrap Mechanic mods
 ```json
 "ExampleEffect": {
   "parameterList": {
-    "DLM_Volume": 1.0f,
-    "DLM_Pitch": 1.0f,
-    "DLM_Reverb": 1.0f,
-    "DLM_ReverbIdx": -1.0f
+    "DLM_Volume": 1.0,
+    "DLM_Pitch": 1.0,
+    "DLM_Reverb": 1.0,
+    "DLM_ReverbIdx": -1.0
   },
   "effectList": [
     {
