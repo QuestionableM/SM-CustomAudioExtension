@@ -46,9 +46,21 @@ int get_reverb_setting(const simdjson::dom::document_stream::iterator::value_typ
 
 	auto v_iter = g_reverbStringToIdx.find(v_reverb_str);
 	if (v_iter == g_reverbStringToIdx.end())
+	{
+		DebugErrorL("Invalid reverb preset name: ", v_reverb_str);
 		return -1;
+	}
 
 	return v_iter->second;
+}
+
+void load_min_max_distance(const simdjson::dom::element& cur_sound, SoundEffectData& effect_data)
+{
+	const auto v_min_distance = cur_sound["min_distance"];
+	const auto v_max_distance = cur_sound["max_distance"];
+
+	effect_data.min_distance = v_min_distance.is_number() ? JsonReader::GetNumber<float>(v_min_distance) : 0.0f;
+	effect_data.max_distance = v_max_distance.is_number() ? JsonReader::GetNumber<float>(v_max_distance) : 10000.0f;
 }
 
 void load_effect_data(const simdjson::dom::element& cur_sound, SoundEffectData& effect_data)
@@ -58,6 +70,8 @@ void load_effect_data(const simdjson::dom::element& cur_sound, SoundEffectData& 
 
 	effect_data.is_3d = v_sound_is_3d_node.is_bool() ? v_sound_is_3d_node.get_bool().value() : false;
 	effect_data.reverb_idx = get_reverb_setting(v_reverb_node);
+
+	load_min_max_distance(cur_sound, effect_data);
 }
 
 void load_sound_config(const std::string& key_repl)

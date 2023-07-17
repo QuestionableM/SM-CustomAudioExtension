@@ -30,6 +30,24 @@ void FakeEventDescription::updateReverbData()
 		this->channel->setReverbProperties(a, (this->reverb_idx == a) ? 1.0f : 0.0f);
 }
 
+void FakeEventDescription::playSound()
+{
+	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
+	if (!v_audio_mgr || this->isPlaying()) return;
+
+	if (v_audio_mgr->fmod_system->playSound(this->sound, nullptr, true, &this->channel) != FMOD_OK)
+		return;
+
+	this->channel->setVolume(SM::GameSettings::GetEffectsVolume());
+	this->channel->set3DMinMaxDistance(this->min_distance, this->max_distance);
+	this->channel->set3DDistanceFilter(false, 1.0f, 10000.0f);
+
+	if (this->is_3d)
+		this->channel->setMode(FMOD_3D);
+
+	this->updateReverbData();
+}
+
 FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 {
 	const std::size_t hash = std::hash<std::string>{}(path);
@@ -91,23 +109,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInst
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		bool is_playing = false;
-		v_fake_event->channel->isPlaying(&is_playing);
-
-		if (!is_playing)
-		{
-			FMOD_RESULT v_result = SM::AudioManager::GetInstance()->fmod_system->playSound(
-				v_fake_event->sound, nullptr, false, &v_fake_event->channel);
-
-			if (v_result == FMOD_OK)
-			{
-				v_fake_event->channel->setMode(FMOD_3D);
-				v_fake_event->channel->set3DConeSettings(75.0f, 360.0f, 0.1f);
-			}
-
-			return v_result;
-		}
-
+		v_fake_event->channel->setPaused(false);
 		return FMOD_OK;
 	}
 
@@ -265,20 +267,22 @@ using v_fmod_set_parameter_function = FMOD_RESULT(*)(FakeEventDescription* fake_
 
 static FMOD_RESULT fake_event_desc_setPitch(FakeEventDescription* fake_event, float value)
 {
-	return fake_event->channel->setPitch(value);
+	fake_event->channel->setPitch(value);
+	return FMOD_OK;
 }
 
 static FMOD_RESULT fake_event_desc_setVolume(FakeEventDescription* fake_event, float volume)
 {
-	return fake_event->setVolume(volume);
+	fake_event->setVolume(volume);
+	return FMOD_OK;
 }
 
 static FMOD_RESULT fake_event_desc_setReverb(FakeEventDescription* fake_event, float reverb)
 {
-	if (fake_event->reverb_idx == -1)
-		return FMOD_OK;
+	if (fake_event->reverb_idx != -1)
+		fake_event->channel->setReverbProperties(fake_event->reverb_idx, reverb);
 
-	return fake_event->channel->setReverbProperties(fake_event->reverb_idx, reverb);
+	return FMOD_OK;
 }
 
 static FMOD_RESULT fake_event_desc_setReverbIndex(FakeEventDescription* fake_event, float reverb_idx)
@@ -328,29 +332,12 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 	SoundData* v_sound_data = SoundStorage::GetSoundData(reinterpret_cast<std::size_t>(event_desc));
 	if (v_sound_data)
 	{
-		SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
-		if (v_audio_mgr)
-		{
-			FMOD::Channel* v_channel;
-			if (v_audio_mgr->fmod_system->playSound(v_sound_data->sound, nullptr, false, &v_channel) == FMOD_OK)
-			{
-				v_channel->setVolume(SM::GameSettings::GetEffectsVolume());
+		FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data, nullptr);
+		v_new_fake_event->playSound();
 
-				v_channel->set3DMinMaxDistance(0.0f, 5000.0f);
-
-				//TODO: Add more config options later
-				if (v_sound_data->effect_data.is_3d)
-					v_channel->setMode(FMOD_3D);
-
-				FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data->sound, v_channel);
-				v_new_fake_event->reverb_idx = v_sound_data->effect_data.reverb_idx;
-				v_new_fake_event->updateReverbData();
-
-				*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
-
-				return FMOD_OK;
-			}
-		}
+		*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
+		
+		return FMOD_OK;
 	}
 
 	return FMODHooks::o_FMOD_Studio_EventDescription_createInstance(event_desc, instance);
