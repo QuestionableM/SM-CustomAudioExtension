@@ -8,7 +8,7 @@ A dll that adds custom audio support for Scrap Mechanic mods
 {
   //Make the names more unique to avoid name collisions with other mods
   "soundList": {
-    //You can reference the same sound multiple times, but configure them differently
+    //You can reference the same sound multiple times, but configure it differently
     "ExampleSoundName": {
       "path": "$CONTENT_DATA/Effects/Audio/example_sound.mp3",
       "is3D": true,
