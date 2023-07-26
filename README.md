@@ -1,6 +1,29 @@
 # SM-DLM
 A dll that adds custom audio support for Scrap Mechanic mods
 
+# How to download and enable
+
+There are 2 ways to enable the DLM module:
+
+<details>
+<summary><small>SM-DLL-Injector</small></summary>
+
+- Download the latest release of <b>[SM-DLL-Injector](https://github.com/QuestionableM/SM-DLL-Injector/releases/latest)</b> and follow the instructions listed in the <b>[README](https://github.com/QuestionableM/SM-DLL-Injector#readme)</b> file
+- Download the latest release of the `DLM.dll` <b>[here](https://github.com/QuestionableM/SM-DLM/releases/latest)</b>
+- Move the `DLM.dll` to `Steam/steamapps/common/Scrap Mechanic/Release/DLLModules` directory created by <b>[SM-DLL-Injector](https://github.com/QuestionableM/SM-DLL-Injector/releases/latest)</b> installer
+- Launch the game
+
+</details>
+
+<details>
+<summary><small>Manual Injection</small></summary>
+
+- Download the latest release of the `DLM.dll` <b>[here](https://github.com/QuestionableM/SM-DLM/releases/latest)</b>
+- Launch the game
+- Inject `DLM.dll` by using a DLL Injector of your choice
+  
+</details>
+
 # How to use
 - Create `sm_dlm_config.json` in the root directory of your mod.
 - An example of how `sm_dlm_config.json` structure should look like:
