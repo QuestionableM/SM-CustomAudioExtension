@@ -299,10 +299,17 @@ static FMOD_RESULT fake_event_desc_setReverbIndex(FakeEventDescription* fake_eve
 
 inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_fake_event_parameter_table =
 {
+	//Legacy audio parameters
 	{ "DLM_Pitch"    , fake_event_desc_setPitch       },
 	{ "DLM_Volume"   , fake_event_desc_setVolume      },
 	{ "DLM_Reverb"   , fake_event_desc_setReverb      },
-	{ "DLM_ReverbIdx", fake_event_desc_setReverbIndex }
+	{ "DLM_ReverbIdx", fake_event_desc_setReverbIndex },
+
+	//New audio parameters
+	{ "CAE_Pitch"    , fake_event_desc_setPitch       },
+	{ "CAE_Volume"   , fake_event_desc_setVolume      },
+	{ "CAE_Reverb"   , fake_event_desc_setReverb      },
+	{ "CAE_ReverbIdx", fake_event_desc_setReverbIndex }
 };
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed)

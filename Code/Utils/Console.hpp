@@ -166,7 +166,7 @@ namespace Engine
 }
 
 #define DebugOut(...)  Engine::Console::Out(__VA_ARGS__)
-#define DebugOutL(...) Engine::Console::Out("[DLM] ", __VA_ARGS__, Engine::Console::Endl)
+#define DebugOutL(...) Engine::Console::Out("[CAE] ", __VA_ARGS__, Engine::Console::Endl)
 
-#define DebugWarningL(...) Engine::Console::Out(0b1101_fg, "[DLM] WARNING: ", __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
-#define DebugErrorL(...)   Engine::Console::Out(0b1001_fg, "[DLM] ERROR: "  , __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
+#define DebugWarningL(...) Engine::Console::Out(0b1101_fg, "[CAE] WARNING: ", __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)
+#define DebugErrorL(...)   Engine::Console::Out(0b1001_fg, "[CAE] ERROR: "  , __FUNCTION__, "(", __LINE__, ") -> ", __VA_ARGS__, Engine::Console::Endl)

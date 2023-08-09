@@ -76,15 +76,21 @@ void load_effect_data(const simdjson::dom::element& cur_sound, SoundEffectData& 
 
 void load_sound_config(const std::string& key_repl)
 {
-	const std::string config_path = key_repl + "/sm_dlm_config.json";
+	std::string config_path = key_repl + "/sm_cae_config.json";
 	if (!File::Exists(config_path))
-		return;
+	{
+		config_path = key_repl + "/sm_dlm_config.json";
+		if (!File::Exists(config_path))
+			return;
+
+		DebugWarningL(key_repl, " is using a legacy version of CustomAudioExtension config");
+	}
 
 	const std::wstring v_wide_path = String::ToWide(config_path);
 	simdjson::dom::document v_document;
 	if (!JsonReader::LoadParseSimdjsonCommentsC(v_wide_path, v_document, simdjson::dom::element_type::OBJECT))
 	{
-		DebugErrorL("Couldn't load the DLM sound config file: ", config_path);
+		DebugErrorL("Couldn't load the CAE sound config file: ", config_path);
 		return;
 	}
 
@@ -180,7 +186,7 @@ int __fastcall Hooks::h_LuaInitFunc(LuaVM* lua_vm, void** some_ptr, int some_num
 	const int v_result = Hooks::o_LuaInitFunc(lua_vm, some_ptr, some_number);
 	if (!v_result)
 	{
-		const int v_inject_result = luaL_loadstring_ptr(lua_vm->state, "unsafe_env.sm.dlm_injected = true");
+		const int v_inject_result = luaL_loadstring_ptr(lua_vm->state, "unsafe_env.sm.cae_injected = true");
 		if (!v_inject_result)
 			return lua_pcall_ptr(lua_vm->state, 0, -1, 0);
 

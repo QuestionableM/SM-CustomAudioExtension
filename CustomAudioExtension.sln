@@ -3,15 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33815.320
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DLM", "DLM.vcxproj", "{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E} = {6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}
-		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2} = {FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libMinHook", "libMinHook\libMinHook.vcxproj", "{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simdjson", "simdjson\simdjson.vcxproj", "{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CustomAudioExtension", "CustomAudioExtension.vcxproj", "{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,10 +15,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Debug|x64.ActiveCfg = Debug|x64
-		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Debug|x64.Build.0 = Debug|x64
-		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Release|x64.ActiveCfg = Release|x64
-		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Release|x64.Build.0 = Release|x64
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Debug|x64.ActiveCfg = Debug|x64
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Debug|x64.Build.0 = Debug|x64
 		{6CCD69CD-98ED-45AA-9DC7-8E6D5251D06E}.Release|x64.ActiveCfg = Release|x64
@@ -31,6 +23,10 @@ Global
 		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Debug|x64.Build.0 = Debug|x64
 		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x64.ActiveCfg = Release|x64
 		{FEC5F3BB-4472-43E6-A4BE-B894A64B45A2}.Release|x64.Build.0 = Release|x64
+		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Debug|x64.ActiveCfg = Debug|x64
+		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Debug|x64.Build.0 = Debug|x64
+		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Release|x64.ActiveCfg = Release|x64
+		{E1679359-E31B-4FA5-A4B4-43C2080D4A1D}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
