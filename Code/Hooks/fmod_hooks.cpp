@@ -99,7 +99,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_release(FMOD::Studio::EventIn
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
-		return v_fake_event->release();
+		return v_fake_event->decodePointer()->release();
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_release(event_instance);
 }
@@ -109,7 +109,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInst
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		v_fake_event->channel->setPaused(false);
+		v_fake_event->decodePointer()->channel->setPaused(false);
 		return FMOD_OK;
 	}
 
@@ -121,6 +121,8 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_stop(FMOD::Studio::EventInsta
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
+		v_fake_event = v_fake_event->decodePointer();
+
 		bool is_playing = false;
 		v_fake_event->channel->isPlaying(&is_playing);
 
@@ -138,6 +140,8 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_get3DAttributes(FMOD::Studio:
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
+		v_fake_event = v_fake_event->decodePointer();
+
 		v_fake_event->channel->get3DConeOrientation(&attributes->forward);
 		v_fake_event->channel->get3DAttributes(&attributes->position, &attributes->velocity);
 		attributes->up = { 0.0f, 0.0f, 1.0f };
@@ -153,6 +157,8 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_set3DAttributes(FMOD::Studio:
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
+		v_fake_event = v_fake_event->decodePointer();
+
 		FMOD_VECTOR v_forward_cpy = attributes->forward;
 		v_fake_event->channel->set3DConeOrientation(&v_forward_cpy);
 
@@ -167,8 +173,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getVolume(FMOD::Studio::Event
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		FMOD_RESULT v_result = v_fake_event->channel->getVolume(volume);
-
+		FMOD_RESULT v_result = v_fake_event->decodePointer()->channel->getVolume(volume);
 		if (v_result == FMOD_OK && final_volume)
 			*final_volume = *volume;
 
@@ -183,7 +188,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(FMOD::Studio::Event
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		v_fake_event->updateVolume();
+		v_fake_event->decodePointer()->updateVolume();
 		return FMOD_OK;
 	}
 
@@ -208,7 +213,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPlaybackState(FMOD::Studio
 	if (v_fake_event->isValidHook())
 	{
 		bool v_is_playing = false;
-		v_fake_event->channel->isPlaying(&v_is_playing);
+		v_fake_event->decodePointer()->channel->isPlaying(&v_is_playing);
 
 		*state = v_is_playing ? FMOD_STUDIO_PLAYBACK_PLAYING : FMOD_STUDIO_PLAYBACK_STOPPED;
 		return FMOD_OK;
@@ -221,7 +226,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getTimelinePosition(FMOD::Stu
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
-		return v_fake_event->channel->getPosition(reinterpret_cast<unsigned int*>(position), FMOD_TIMEUNIT_MS);
+		return v_fake_event->decodePointer()->channel->getPosition(reinterpret_cast<unsigned int*>(position), FMOD_TIMEUNIT_MS);
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_getTimelinePosition(event_instance, position);
 }
@@ -230,7 +235,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setTimelinePosition(FMOD::Stu
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
-		return v_fake_event->channel->setPosition(static_cast<unsigned int>(position), FMOD_TIMEUNIT_MS);
+		return v_fake_event->decodePointer()->channel->setPosition(static_cast<unsigned int>(position), FMOD_TIMEUNIT_MS);
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_setTimelinePosition(event_instance, position);
 }
@@ -240,8 +245,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPitch(FMOD::Studio::EventI
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		FMOD_RESULT v_result = v_fake_event->channel->getPitch(pitch);
-
+		FMOD_RESULT v_result = v_fake_event->decodePointer()->channel->getPitch(pitch);
 		if (v_result == FMOD_OK && finalpitch)
 			*finalpitch = *pitch;
 
@@ -256,7 +260,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setPitch(FMOD::Studio::EventI
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		v_fake_event->channel->setPitch(pitch);
+		v_fake_event->decodePointer()->channel->setPitch(pitch);
 		return FMOD_OK;
 	}
 
@@ -319,7 +323,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Stud
 	{
 		auto v_iter = g_fake_event_parameter_table.find(std::string(name));
 		if (v_iter != g_fake_event_parameter_table.end())
-			return v_iter->second(v_fake_event, value);
+			return v_iter->second(v_fake_event->decodePointer(), value);
 	}
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_setParameterByName(event_instance, name, value, ignoreseekspeed);
@@ -329,7 +333,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::Ev
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_desc);
 	if (v_fake_event->isValidHook())
-		return v_fake_event->sound->getLength(reinterpret_cast<unsigned int*>(length), FMOD_TIMEUNIT_MS);
+		return v_fake_event->decodePointer()->sound->getLength(reinterpret_cast<unsigned int*>(length), FMOD_TIMEUNIT_MS);
 
 	return FMODHooks::o_FMOD_Studio_EventDescription_getLength(event_desc, length);
 }
@@ -342,7 +346,7 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 		FakeEventDescription* v_new_fake_event = new FakeEventDescription(v_sound_data, nullptr);
 		v_new_fake_event->playSound();
 
-		*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event);
+		*instance = reinterpret_cast<FMOD::Studio::EventInstance*>(v_new_fake_event->encodePointer());
 		
 		return FMOD_OK;
 	}

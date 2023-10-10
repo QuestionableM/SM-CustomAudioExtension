@@ -57,8 +57,6 @@ struct SoundData
 
 struct FakeEventDescription
 {
-	std::size_t v_secret_number = FAKE_EVENT_DESC_MAGIC;
-
 	FMOD::Sound* sound;
 	FMOD::Channel* channel;
 
@@ -97,12 +95,21 @@ struct FakeEventDescription
 		return is_playing;
 	}
 
-	bool isValidHook() const
+	inline bool isValidHook() const noexcept
 	{
-		if (this < reinterpret_cast<FakeEventDescription*>(0xfffffff))
-			return false;
+		return (reinterpret_cast<std::uintptr_t>(this) & (1ull << 63));
+	}
 
-		return v_secret_number == FAKE_EVENT_DESC_MAGIC;
+	inline FakeEventDescription* encodePointer() noexcept
+	{
+		const std::uintptr_t v_encoded_ptr = reinterpret_cast<std::uintptr_t>(this) | (1ULL << 63);
+		return reinterpret_cast<FakeEventDescription*>(v_encoded_ptr);
+	}
+
+	inline FakeEventDescription* decodePointer() noexcept
+	{
+		const std::uintptr_t v_decoded_ptr = reinterpret_cast<std::uintptr_t>(this) & ~(1ULL << 63);
+		return reinterpret_cast<FakeEventDescription*>(v_decoded_ptr);
 	}
 
 	FMOD_RESULT release()
