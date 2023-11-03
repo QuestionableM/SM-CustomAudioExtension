@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hooks/offsets.hpp"
 #include "win_include.hpp"
 
 #include <DirectXMath.h>
@@ -34,7 +35,7 @@ namespace SM
 
 		inline static AudioManager* GetInstance()
 		{
-			return *reinterpret_cast<AudioManager**>(std::uintptr_t(GetModuleHandle(NULL)) + 0x12A7710);
+			return *reinterpret_cast<AudioManager**>(std::uintptr_t(GetModuleHandle(NULL)) + OFF_AUDIO_MANAGER_PTR);
 		}
 
 	}; // Size: 0x2D8

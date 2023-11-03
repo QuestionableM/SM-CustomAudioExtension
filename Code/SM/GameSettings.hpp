@@ -15,7 +15,7 @@ namespace SM
 
 		inline static GameSettings* GetInstance()
 		{
-			return *reinterpret_cast<GameSettings**>(std::uintptr_t(GetModuleHandle(NULL)) + 0x12A7840);
+			return *reinterpret_cast<GameSettings**>(std::uintptr_t(GetModuleHandle(NULL)) + OFF_GAME_SETTINGS_PTR);
 		}
 
 		inline float get_effect_volume()

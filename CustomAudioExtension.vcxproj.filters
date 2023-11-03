@@ -65,5 +65,8 @@
     <ClInclude Include="Code\SM\GameSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Hooks\offsets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

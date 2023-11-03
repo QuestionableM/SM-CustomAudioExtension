@@ -10,6 +10,8 @@
 #include "Utils/File.hpp"
 #include "Utils/Json.hpp"
 
+#include "offsets.hpp"
+
 #include <MinHook.h>
 
 void replace_content_key_data(std::string& path, const std::string& key_repl)
@@ -199,9 +201,9 @@ int __fastcall Hooks::h_LuaInitFunc(LuaVM* lua_vm, void** some_ptr, int some_num
 void Hooks::RunHooks()
 {
 	const std::uintptr_t v_module_handle = std::uintptr_t(GetModuleHandle(NULL));
-	const std::uintptr_t v_load_shapesets_addr = v_module_handle + 0x5C4250;
-	const std::uintptr_t v_init_shape_manager_addr = v_module_handle + 0x378170;
-	const std::uintptr_t v_lua_init_addr = v_module_handle + 0x5784D0;
+	const std::uintptr_t v_load_shapesets_addr = v_module_handle + OFF_LOAD_SHAPESETS_FUNCTION;
+	const std::uintptr_t v_init_shape_manager_addr = v_module_handle + OFF_INIT_SHAPESET_MANAGER_FUNCTION;
+	const std::uintptr_t v_lua_init_addr = v_module_handle + OFF_INIT_LUA_MANAGER_FUNCTION;
 
 	HMODULE v_lua_dll = GetModuleHandleA("lua51.dll");
 	if (v_lua_dll)

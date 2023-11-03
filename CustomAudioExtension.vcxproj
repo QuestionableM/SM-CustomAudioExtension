@@ -103,6 +103,7 @@
     <ClCompile Include="Code\Utils\Json.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Hooks\offsets.hpp" />
     <ClInclude Include="Code\SM\AudioManager.hpp" />
     <ClInclude Include="Code\SM\DirectoryManager.hpp" />
     <ClInclude Include="Code\Hooks\fmod_hooks.hpp" />

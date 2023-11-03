@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Hooks/offsets.hpp"
 #include "win_include.hpp"
 
 #include <unordered_map>
@@ -14,7 +15,7 @@ namespace SM
 
 		inline static DirectoryManager* GetInstance()
 		{
-			return *reinterpret_cast<DirectoryManager**>(std::uintptr_t(GetModuleHandle(NULL)) + 0x12A78F0);
+			return *reinterpret_cast<DirectoryManager**>(std::uintptr_t(GetModuleHandle(NULL)) + OFF_DIRECTORY_MANAGER_PTR);
 		}
 
 		inline bool get_replacement(const std::string& key, std::string& replacement)
