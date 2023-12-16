@@ -45,7 +45,7 @@ There are 2 ways to enable the CustomAudioExtension module:
 }
 ```
 - The names specified in `sm_cae_config.json` can then be used in effects!
-```json
+```jsonc
 "ExampleEffect": {
   "parameterList": {
     "CAE_Volume": 1.0, //1.0 - max volume
