@@ -19,6 +19,11 @@ FMOD_RESULT FakeEventDescription::setVolume(float new_volume)
 	return this->updateVolume();
 }
 
+FMOD_RESULT FakeEventDescription::setPosition(float new_position)
+{
+	return this->channel->setPosition(static_cast<unsigned int>(new_position * 1000.0f), FMOD_TIMEUNIT_MS);
+}
+
 FMOD_RESULT FakeEventDescription::updateVolume()
 {
 	return this->channel->setVolume(this->custom_volume * SM::GameSettings::GetEffectsVolume());
@@ -301,6 +306,12 @@ static FMOD_RESULT fake_event_desc_setReverbIndex(FakeEventDescription* fake_eve
 	return FMOD_OK;
 }
 
+static FMOD_RESULT fake_event_desc_setPosition(FakeEventDescription* fake_event, float position)
+{
+	fake_event->setPosition(position);
+	return FMOD_OK;
+}
+
 inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_fake_event_parameter_table =
 {
 	//Legacy audio parameters
@@ -313,7 +324,8 @@ inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_f
 	{ "CAE_Pitch"    , fake_event_desc_setPitch       },
 	{ "CAE_Volume"   , fake_event_desc_setVolume      },
 	{ "CAE_Reverb"   , fake_event_desc_setReverb      },
-	{ "CAE_ReverbIdx", fake_event_desc_setReverbIndex }
+	{ "CAE_ReverbIdx", fake_event_desc_setReverbIndex },
+	{ "CAE_Position" , fake_event_desc_setPosition    }
 };
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed)

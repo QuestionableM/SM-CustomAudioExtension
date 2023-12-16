@@ -80,6 +80,7 @@ struct FakeEventDescription
 	}
 
 	FMOD_RESULT setVolume(float new_volume);
+	FMOD_RESULT setPosition(float new_position);
 	FMOD_RESULT updateVolume();
 
 	void updateReverbData();
