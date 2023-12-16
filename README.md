@@ -48,16 +48,17 @@ There are 2 ways to enable the CustomAudioExtension module:
 ```json
 "ExampleEffect": {
   "parameterList": {
-    "CAE_Volume": 1.0,
-    "CAE_Pitch": 1.0,
-    "CAE_Reverb": 1.0,
-    "CAE_ReverbIdx": -1.0
+    "CAE_Volume": 1.0, //1.0 - max volume
+    "CAE_Pitch": 1.0, //1.0 - normal pitch
+    "CAE_Reverb": 1.0, //1.0 - max reverb
+    "CAE_ReverbIdx": -1.0,
+    "CAE_Position": 0.0 //Measured in seconds
   },
   "effectList": [
     {
       "type": "audio",
       "name": "ExampleSoundName",
-      "parameters": [ "CAE_Volume", "CAE_Pitch", "CAE_Reverb", "CAE_ReverbIdx" ]
+      "parameters": [ "CAE_Volume", "CAE_Pitch", "CAE_Reverb", "CAE_ReverbIdx", "CAE_Position" ]
     }
   ]
 }
