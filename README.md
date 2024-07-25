@@ -1,5 +1,7 @@
 # SM-CustomAudioExtension
-A dll that adds custom audio support for Scrap Mechanic mods
+A dll that adds custom audio support for Scrap Mechanic mods<br/>
+
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/QuestionableM/SM-CustomAudioExtension/total)
 
 # How to download and enable
 
