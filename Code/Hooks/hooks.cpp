@@ -2,8 +2,8 @@
 
 #include "fmod_hooks.hpp"
 
-#include "SM/DirectoryManager.hpp"
-#include "SM/AudioManager.hpp"
+#include <SmSdk/DirectoryManager.hpp>
+#include <SmSdk/AudioManager.hpp>
 
 #include "Utils/Console.hpp"
 #include "Utils/String.hpp"
@@ -145,7 +145,7 @@ void preload_sounds(const std::string& shape_set_path)
 	}
 
 	std::string v_replacement;
-	if (!SM::DirectoryManager::GetReplacement(v_key, v_replacement))
+	if (!DirectoryManager::GetReplacement(v_key, v_replacement))
 	{
 		DebugErrorL("Couldn't find a replacement for: ", shape_set_path);
 		return;

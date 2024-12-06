@@ -1,10 +1,13 @@
-#include "win_include.hpp"
-#include <MinHook.h>
+#include <SmSdk/TimestampCheck.hpp>
+#include <SmSdk/win_include.hpp>
 
 #include "Hooks/fmod_hooks.hpp"
 #include "Hooks/hooks.hpp"
-
 #include "Utils/Console.hpp"
+
+#include <MinHook.h>
+
+#pragma comment(lib, "User32.lib")
 
 void dll_initialize()
 {
@@ -36,6 +39,16 @@ static bool g_mhAttached = false;
 
 void dll_attach()
 {
+	if (!SmSdk::CheckTimestamp(_SM_TIMESTAMP_070_771))
+	{
+		MessageBoxA(
+			NULL,
+			"Your game version is unsupposed by Custom Audio Extension. The current version of the mod has been built for Scrap Mechanic 0.7.0.771",
+			"Unsupported Version",
+			MB_ICONWARNING);
+		return;
+	}
+
 	if (MH_Initialize() == MH_OK)
 	{
 		g_mhInitialized = true;

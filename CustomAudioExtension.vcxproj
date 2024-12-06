@@ -59,7 +59,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\MinHook\include;$(SolutionDir)Dependencies\FMOD\include;$(SolutionDir)Dependencies\simdjson;$(SolutionDir)Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\MinHook\include;$(SolutionDir)Dependencies\SmSdk\include;$(SolutionDir)Dependencies\FMOD\include;$(SolutionDir)Dependencies\simdjson;$(SolutionDir)Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
@@ -79,7 +79,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\MinHook\include;$(SolutionDir)Dependencies\FMOD\include;$(SolutionDir)Dependencies\simdjson;$(SolutionDir)Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\MinHook\include;$(SolutionDir)Dependencies\SmSdk\include;$(SolutionDir)Dependencies\FMOD\include;$(SolutionDir)Dependencies\simdjson;$(SolutionDir)Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DebugInformationFormat>None</DebugInformationFormat>
@@ -101,20 +101,20 @@
     <ClCompile Include="Code\main.cpp" />
     <ClCompile Include="Code\Utils\Console.cpp" />
     <ClCompile Include="Code\Utils\Json.cpp" />
+    <ClCompile Include="Dependencies\SmSdk\src\DirectoryManager.cpp" />
+    <ClCompile Include="Dependencies\SmSdk\src\MyPlayer.cpp" />
+    <ClCompile Include="Dependencies\SmSdk\src\Player.cpp" />
+    <ClCompile Include="Dependencies\SmSdk\src\PointerGetters.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Hooks\offsets.hpp" />
-    <ClInclude Include="Code\SM\AudioManager.hpp" />
-    <ClInclude Include="Code\SM\DirectoryManager.hpp" />
     <ClInclude Include="Code\Hooks\fmod_hooks.hpp" />
-    <ClInclude Include="Code\SM\GameSettings.hpp" />
     <ClInclude Include="Code\Hooks\hooks.hpp" />
     <ClInclude Include="Code\Utils\ConColors.hpp" />
     <ClInclude Include="Code\Utils\Console.hpp" />
     <ClInclude Include="Code\Utils\File.hpp" />
     <ClInclude Include="Code\Utils\Json.hpp" />
     <ClInclude Include="Code\Utils\String.hpp" />
-    <ClInclude Include="Code\win_include.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

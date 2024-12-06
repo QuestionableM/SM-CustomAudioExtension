@@ -1,10 +1,9 @@
 #include "fmod_hooks.hpp"
 
-#include "SM/DirectoryManager.hpp"
-#include "SM/AudioManager.hpp"
-#include "SM/GameSettings.hpp"
-
-#include "win_include.hpp"
+#include <SmSdk/DirectoryManager.hpp>
+#include <SmSdk/AudioManager.hpp>
+#include <SmSdk/GameSettings.hpp>
+#include <SmSdk/win_include.hpp>
 
 #include "Utils/Console.hpp"
 #include "Utils/File.hpp"
@@ -26,7 +25,7 @@ FMOD_RESULT FakeEventDescription::setPosition(float new_position)
 
 FMOD_RESULT FakeEventDescription::updateVolume()
 {
-	return this->channel->setVolume(this->custom_volume * SM::GameSettings::GetEffectsVolume());
+	return this->channel->setVolume(this->custom_volume * GameSettings::GetEffectsVolume());
 }
 
 void FakeEventDescription::updateReverbData()
@@ -37,13 +36,13 @@ void FakeEventDescription::updateReverbData()
 
 void FakeEventDescription::playSound()
 {
-	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
-	if (!v_audio_mgr || this->isPlaying()) return;
+	AudioManager* v_pAudioMgr = AudioManager::GetInstance();
+	if (!v_pAudioMgr || this->isPlaying()) return;
 
-	if (v_audio_mgr->fmod_system->playSound(this->sound, nullptr, true, &this->channel) != FMOD_OK)
+	if (v_pAudioMgr->fmod_system->playSound(this->sound, nullptr, true, &this->channel) != FMOD_OK)
 		return;
 
-	this->channel->setVolume(SM::GameSettings::GetEffectsVolume());
+	this->channel->setVolume(GameSettings::GetEffectsVolume());
 	this->channel->set3DMinMaxDistance(this->min_distance, this->max_distance);
 	this->channel->set3DDistanceFilter(false, 1.0f, 10000.0f);
 
@@ -61,15 +60,15 @@ FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 	if (v_iter != SoundStorage::PathHashToSound.end())
 		return v_iter->second;
 
-	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
-	if (!v_audio_mgr)
+	AudioManager* v_pAudioMgr = AudioManager::GetInstance();
+	if (!v_pAudioMgr)
 	{
 		DebugErrorL("AudioManager is not initialized!");
 		return nullptr;
 	}
 
 	FMOD::Sound* v_custom_sound;
-	if (v_audio_mgr->fmod_system->createSound(path.c_str(), FMOD_ACCURATETIME, nullptr, &v_custom_sound) != FMOD_OK)
+	if (v_pAudioMgr->fmod_system->createSound(path.c_str(), FMOD_ACCURATETIME, nullptr, &v_custom_sound) != FMOD_OK)
 	{
 		DebugErrorL("Couldn't load the specified sound file: ", path);
 		return nullptr;
@@ -529,19 +528,19 @@ static FMODHookData g_fmodHookData[] =
 
 void FMODHooks::UpdateReverbProperties()
 {
-	SM::AudioManager* v_audio_mgr = SM::AudioManager::GetInstance();
-	if (!v_audio_mgr) return;
+	AudioManager* v_pAudioMgr = AudioManager::GetInstance();
+	if (!v_pAudioMgr) return;
 
 	DebugOutL("Injecting reverb properties");
 
 	FMOD_REVERB_PROPERTIES v_reverb_preset = FMOD_PRESET_MOUNTAINS;
-	v_audio_mgr->fmod_system->setReverbProperties(0, &v_reverb_preset);
+	v_pAudioMgr->fmod_system->setReverbProperties(0, &v_reverb_preset);
 	FMOD_REVERB_PROPERTIES v_reverb_preset2 = FMOD_PRESET_CAVE;
-	v_audio_mgr->fmod_system->setReverbProperties(1, &v_reverb_preset2);
+	v_pAudioMgr->fmod_system->setReverbProperties(1, &v_reverb_preset2);
 	FMOD_REVERB_PROPERTIES v_reverb_preset3 = FMOD_PRESET_GENERIC;
-	v_audio_mgr->fmod_system->setReverbProperties(2, &v_reverb_preset3);
+	v_pAudioMgr->fmod_system->setReverbProperties(2, &v_reverb_preset3);
 	FMOD_REVERB_PROPERTIES v_reverb_preset4 = FMOD_PRESET_UNDERWATER;
-	v_audio_mgr->fmod_system->setReverbProperties(3, &v_reverb_preset4);
+	v_pAudioMgr->fmod_system->setReverbProperties(3, &v_reverb_preset4);
 }
 
 void FMODHooks::Hook()
