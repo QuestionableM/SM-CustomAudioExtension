@@ -22,7 +22,7 @@ public:
 	char someData[16];
 #endif
 
-}; // Size: 0x168 (+ 0x10 after 070771)
+}; // Size: 0x168
 
 #if _SM_VERSION_NUM >= 070771
 static_assert(sizeof(GameplayOptionsMenu) == 0x178, "GameplayOptionsMenu: Incorrect Size");
