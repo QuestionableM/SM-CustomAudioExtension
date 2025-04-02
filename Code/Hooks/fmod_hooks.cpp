@@ -117,7 +117,7 @@ FMOD::Sound* SoundStorage::CreateSound(const std::string_view& path)
 	}
 
 	FMOD::Sound* v_pCustomSound;
-	if (v_pAudioMgr->fmod_system->createSound(path.data(), FMOD_ACCURATETIME, nullptr, &v_pCustomSound) != FMOD_OK)
+	if (v_pAudioMgr->fmod_system->createSound(path.data(), FMOD_ACCURATETIME | FMOD_NONBLOCKING, nullptr, &v_pCustomSound) != FMOD_OK)
 	{
 		DebugErrorL("Couldn't load the specified sound file: ", path);
 		return nullptr;
