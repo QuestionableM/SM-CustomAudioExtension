@@ -101,11 +101,29 @@ namespace Engine
 			WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
 		}
 	};
+
+	template<>
+	struct ConsoleOutputType<std::wstring_view>
+	{
+		inline static void Output(const std::wstring_view& msg)
+		{
+			WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
+		}
+	};
 	
 	template<>
 	struct ConsoleOutputType<std::string>
 	{
 		inline static void Output(const std::string& msg)
+		{
+			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
+		}
+	};
+
+	template<>
+	struct ConsoleOutputType<std::string_view>
+	{
+		inline static void Output(const std::string_view& msg)
 		{
 			WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), msg.data(), static_cast<DWORD>(msg.size()), NULL, NULL);
 		}

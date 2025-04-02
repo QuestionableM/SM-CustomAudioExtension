@@ -14,23 +14,26 @@
 
 #include <MinHook.h>
 
-void replace_content_key_data(std::string& path, const std::string& key_repl)
+void replace_content_key_data(std::string& path, const std::string_view& keyRepl)
 {
 	if (path.empty() || path[0] != '$')
 		return;
 
-	const std::size_t v_slash_idx = path.find('/');
-	if (v_slash_idx == std::string::npos)
+	const std::size_t v_slashIdx = path.find('/');
+	if (v_slashIdx == std::string::npos)
 		return;
 
-	const std::string v_chunk = path.substr(0, v_slash_idx);
-	if (v_chunk != "$CONTENT_DATA")
+	if (std::string_view(path).substr(0, v_slashIdx) != "$CONTENT_DATA")
 		return;
 
-	path = key_repl + path.substr(v_slash_idx);
+	path.replace(
+		path.begin(),
+		path.begin() + v_slashIdx,
+		keyRepl
+	);
 }
 
-inline static std::unordered_map<std::string, int> g_reverbStringToIdx =
+inline static std::unordered_map<std::string_view, int> g_reverbStringToIdx =
 {
 	{ "MOUNTAINS" , 0 },
 	{ "CAVE"      , 1 },
@@ -38,120 +41,113 @@ inline static std::unordered_map<std::string, int> g_reverbStringToIdx =
 	{ "UNDERWATER", 3 }
 };
 
-int get_reverb_setting(const simdjson::dom::document_stream::iterator::value_type& v_reverb_data)
+int get_reverb_setting(const simdjson::dom::document_stream::iterator::value_type& reverbData)
 {
-	if (!v_reverb_data.is_string())
-		return -1;
+	if (!reverbData.is_string()) return -1;
 
-	std::string_view v_reverb_string_view = v_reverb_data.get_string();
-	std::string v_reverb_str(v_reverb_string_view.data(), v_reverb_string_view.size());
-
-	auto v_iter = g_reverbStringToIdx.find(v_reverb_str);
+	auto v_iter = g_reverbStringToIdx.find(reverbData.get_string());
 	if (v_iter == g_reverbStringToIdx.end())
 	{
-		DebugErrorL("Invalid reverb preset name: ", v_reverb_str);
+		DebugErrorL("Invalid reverb preset name: ", reverbData.get_string().value_unsafe());
 		return -1;
 	}
 
 	return v_iter->second;
 }
 
-void load_min_max_distance(const simdjson::dom::element& cur_sound, SoundEffectData& effect_data)
+void load_min_max_distance(const simdjson::dom::element& curSound, SoundEffectData& effectData)
 {
-	const auto v_min_distance = cur_sound["min_distance"];
-	const auto v_max_distance = cur_sound["max_distance"];
+	const auto v_minDistance = curSound["min_distance"];
+	const auto v_maxDistance = curSound["max_distance"];
 
-	effect_data.min_distance = v_min_distance.is_number() ? JsonReader::GetNumber<float>(v_min_distance) : 0.0f;
-	effect_data.max_distance = v_max_distance.is_number() ? JsonReader::GetNumber<float>(v_max_distance) : 10000.0f;
+	effectData.min_distance = v_minDistance.is_number() ? JsonReader::GetNumber<float>(v_minDistance) : 0.0f;
+	effectData.max_distance = v_maxDistance.is_number() ? JsonReader::GetNumber<float>(v_maxDistance) : 10000.0f;
 }
 
-void load_effect_data(const simdjson::dom::element& cur_sound, SoundEffectData& effect_data)
+void load_effect_data(const simdjson::dom::element& curSound, SoundEffectData& effectData)
 {
-	const auto v_sound_is_3d_node = cur_sound["is3D"];
-	const auto v_reverb_node = cur_sound["reverb"];
+	const auto v_soundIs3dNode = curSound["is3D"];
+	const auto v_reverbNode = curSound["reverb"];
 
-	effect_data.is_3d = v_sound_is_3d_node.is_bool() ? v_sound_is_3d_node.get_bool().value() : false;
-	effect_data.reverb_idx = get_reverb_setting(v_reverb_node);
+	effectData.is_3d = v_soundIs3dNode.is_bool() ? v_soundIs3dNode.get_bool().value() : false;
+	effectData.reverb_idx = get_reverb_setting(v_reverbNode);
 
-	load_min_max_distance(cur_sound, effect_data);
+	load_min_max_distance(curSound, effectData);
 }
 
-void load_sound_config(const std::string& key_repl)
+void load_sound_config(const std::string& keyRepl)
 {
-	std::string config_path = key_repl + "/sm_cae_config.json";
-	if (!File::Exists(config_path))
+	std::string v_configPath = keyRepl + "/sm_cae_config.json";
+	if (!File::Exists(v_configPath))
 	{
-		config_path = key_repl + "/sm_dlm_config.json";
-		if (!File::Exists(config_path))
+		v_configPath = keyRepl + "/sm_dlm_config.json";
+		if (!File::Exists(v_configPath))
 			return;
 
-		DebugWarningL(key_repl, " is using a legacy version of CustomAudioExtension config");
+		DebugWarningL(keyRepl, " is using a legacy version of CustomAudioExtension config");
 	}
 
-	const std::wstring v_wide_path = String::ToWide(config_path);
 	simdjson::dom::document v_document;
-	if (!JsonReader::LoadParseSimdjsonCommentsC(v_wide_path, v_document, simdjson::dom::element_type::OBJECT))
+	if (!JsonReader::LoadParseSimdjsonCommentsC(
+		String::ToWide(v_configPath),
+		v_document,
+		simdjson::dom::element_type::OBJECT))
 	{
-		DebugErrorL("Couldn't load the CAE sound config file: ", config_path);
+		DebugErrorL("Couldn't load the CAE sound config file: ", v_configPath);
 		return;
 	}
 
-	const auto v_root = v_document.root();
-	const auto v_sound_list = v_root["soundList"];
-	if (!v_sound_list.is_object())
+	const auto v_soundList = v_document.root()["soundList"];
+	if (!v_soundList.is_object())
 	{
-		DebugErrorL("No sound list: ", config_path);
+		DebugErrorL("No sound list: ", v_configPath);
 		return;
 	}
 
-	SoundEffectData v_effect_data;
+	SoundEffectData v_effectData;
 
-	for (auto& v_sound_list : v_sound_list.get_object())
+	for (auto& v_soundListObj : v_soundList.get_object())
 	{
-		if (!v_sound_list.value.is_object())
-			continue;
+		if (!v_soundListObj.value.is_object()) continue;
 
-		const auto v_sound_path_node = v_sound_list.value["path"];
-		if (!v_sound_path_node.is_string())
-			continue;
+		const auto v_soundPathNode = v_soundListObj.value["path"];
+		if (!v_soundPathNode.is_string()) continue;
 
-		load_effect_data(v_sound_list.value, v_effect_data);
+		load_effect_data(v_soundListObj.value, v_effectData);
 
-		std::string v_sound_path(v_sound_path_node.get_string().value().data());
-		replace_content_key_data(v_sound_path, key_repl);
+		std::string v_soundPath(v_soundPathNode.get_string().value().data());
+		replace_content_key_data(v_soundPath, keyRepl);
 
-		const std::string v_sound_name(v_sound_list.key.data(), v_sound_list.key.size());
-		SoundStorage::PreloadSound(v_sound_path, v_sound_name, v_effect_data);
+		SoundStorage::PreloadSound(v_soundPath, v_soundListObj.key, v_effectData);
 	}
 }
 
-bool separate_key(std::string& path)
+bool separate_key(const std::string_view& path, std::string_view& outKey)
 {
 	const std::size_t v_idx = path.find('/');
-	if (v_idx == std::string::npos)
-		return false;
+	if (v_idx == std::string::npos) return false;
 
-	path = path.substr(0, v_idx);
+	outKey = path.substr(0, v_idx);
 	return true;
 }
 
-void preload_sounds(const std::string& shape_set_path)
+void preload_sounds(const std::string& shapeSetPath)
 {
-	std::string v_key = shape_set_path;
-	if (!separate_key(v_key))
+	std::string_view v_key;
+	if (!separate_key(shapeSetPath, v_key))
 	{
-		DebugErrorL("Couldn't separate the key from: ", shape_set_path);
+		DebugErrorL("Couldn't separate the key from: ", shapeSetPath);
 		return;
 	}
 
-	std::string v_replacement;
+	std::string_view v_replacement;
 	if (!DirectoryManager::GetReplacement(v_key, v_replacement))
 	{
-		DebugErrorL("Couldn't find a replacement for: ", shape_set_path);
+		DebugErrorL("Couldn't find a replacement for: ", shapeSetPath);
 		return;
 	}
 
-	load_sound_config(v_replacement);
+	load_sound_config(std::string(v_replacement));
 }
 
 void Hooks::h_LoadShapesetsFunction(void* shape_manager, const std::string& shape_set, int some_flag)

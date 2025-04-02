@@ -123,60 +123,26 @@ struct FakeEventDescription
 class SoundStorage
 {
 public:
+	static void ClearSounds();
+
+	static bool SoundExists(const std::size_t nameHash);
+	static SoundData* GetSoundData(const std::size_t nameHash);
+
+	static std::size_t SavePath(const std::string_view& path);
+	static bool GetPath(const std::size_t hash, std::string& outPath);
+
+	static FMOD::Sound* CreateSound(const std::string_view& path);
+	static void PreloadSound(
+		const std::string_view& sound_path,
+		const std::string_view& sound_name,
+		const SoundEffectData& effect_data
+	);
+
+public:
 	inline static std::unordered_map<std::size_t, std::string> HashToPath;
 
 	inline static std::unordered_map<std::size_t, FMOD::Sound*> PathHashToSound;
 	inline static std::unordered_map<std::size_t, SoundData> NameHashToSound;
-
-	inline static void ClearSounds()
-	{
-		for (auto& [sound_hash, sound_ptr] : SoundStorage::PathHashToSound)
-			sound_ptr->release();
-
-		SoundStorage::PathHashToSound.clear();
-		SoundStorage::NameHashToSound.clear();
-
-		SoundStorage::HashToPath.clear();
-	}
-
-	inline static bool SoundExists(std::size_t name_hash)
-	{
-		return SoundStorage::NameHashToSound.find(name_hash) != SoundStorage::NameHashToSound.end();
-	}
-
-	inline static SoundData* GetSoundData(std::size_t name_hash)
-	{
-		auto v_iter = SoundStorage::NameHashToSound.find(name_hash);
-		if (v_iter == SoundStorage::NameHashToSound.end())
-			return nullptr;
-
-		return &v_iter->second;
-	}
-
-	inline static std::size_t SavePath(const std::string& path)
-	{
-		const std::size_t v_string_hash = std::hash<std::string>{}(path);
-
-		auto v_iter = SoundStorage::HashToPath.find(v_string_hash);
-		if (v_iter != SoundStorage::HashToPath.end())
-			return v_string_hash;
-
-		SoundStorage::HashToPath.emplace(v_string_hash, path);
-		return v_string_hash;
-	}
-
-	inline static bool GetPath(std::size_t hash, std::string& path)
-	{
-		auto v_iter = SoundStorage::HashToPath.find(hash);
-		if (v_iter == SoundStorage::HashToPath.end())
-			return false;
-
-		path = v_iter->second;
-		return true;
-	}
-
-	static FMOD::Sound* CreateSound(const std::string& path);
-	static void PreloadSound(const std::string& sound_path, const std::string& sound_name, const SoundEffectData& effect_data);
 };
 
 class FMODHooks

@@ -52,11 +52,60 @@ void FakeEventDescription::playSound()
 	this->updateReverbData();
 }
 
-FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
-{
-	const std::size_t hash = std::hash<std::string>{}(path);
+///////////////// SOUND STORAGE ////////////////////
 
-	auto v_iter = SoundStorage::PathHashToSound.find(hash);
+void SoundStorage::ClearSounds()
+{
+	for (auto& [v_soundHash, v_pSound] : SoundStorage::PathHashToSound)
+		v_pSound->release();
+
+	SoundStorage::PathHashToSound.clear();
+	SoundStorage::NameHashToSound.clear();
+
+	SoundStorage::HashToPath.clear();
+}
+
+bool SoundStorage::SoundExists(const std::size_t nameHash)
+{
+	return SoundStorage::NameHashToSound.contains(nameHash);
+}
+
+SoundData* SoundStorage::GetSoundData(const std::size_t nameHash)
+{
+	auto v_iter = SoundStorage::NameHashToSound.find(nameHash);
+	if (v_iter != SoundStorage::NameHashToSound.end())
+		return &v_iter->second;
+	else
+		return nullptr;
+}
+
+std::size_t SoundStorage::SavePath(const std::string_view& path)
+{
+	const std::size_t v_stringHash = std::hash<std::string_view>{}(path);
+
+	auto v_iter = SoundStorage::HashToPath.find(v_stringHash);
+	if (v_iter != SoundStorage::HashToPath.end())
+		return v_stringHash;
+
+	SoundStorage::HashToPath.emplace(v_stringHash, path);
+	return v_stringHash;
+}
+
+bool SoundStorage::GetPath(const std::size_t hash, std::string& outPath)
+{
+	auto v_iter = SoundStorage::HashToPath.find(hash);
+	if (v_iter == SoundStorage::HashToPath.end())
+		return false;
+
+	outPath = v_iter->second;
+	return true;
+}
+
+FMOD::Sound* SoundStorage::CreateSound(const std::string_view& path)
+{
+	const std::size_t v_hash = std::hash<std::string_view>{}(path);
+
+	auto v_iter = SoundStorage::PathHashToSound.find(v_hash);
 	if (v_iter != SoundStorage::PathHashToSound.end())
 		return v_iter->second;
 
@@ -67,37 +116,42 @@ FMOD::Sound* SoundStorage::CreateSound(const std::string& path)
 		return nullptr;
 	}
 
-	FMOD::Sound* v_custom_sound;
-	if (v_pAudioMgr->fmod_system->createSound(path.c_str(), FMOD_ACCURATETIME, nullptr, &v_custom_sound) != FMOD_OK)
+	FMOD::Sound* v_pCustomSound;
+	if (v_pAudioMgr->fmod_system->createSound(path.data(), FMOD_ACCURATETIME, nullptr, &v_pCustomSound) != FMOD_OK)
 	{
 		DebugErrorL("Couldn't load the specified sound file: ", path);
 		return nullptr;
 	}
 
 	DebugOutL(__FUNCTION__, " -> Loaded a sound: ", path);
-	SoundStorage::PathHashToSound.emplace(hash, v_custom_sound);
-	return v_custom_sound;
+	SoundStorage::PathHashToSound.emplace(v_hash, v_pCustomSound);
+	return v_pCustomSound;
 }
 
-void SoundStorage::PreloadSound(const std::string& sound_path, const std::string& sound_name, const SoundEffectData& effect_data)
+void SoundStorage::PreloadSound(
+	const std::string_view& sound_path,
+	const std::string_view& sound_name,
+	const SoundEffectData& effect_data)
 {
-	FMOD::Sound* v_sound = SoundStorage::CreateSound(sound_path);
-	if (!v_sound) return;
+	FMOD::Sound* v_pSound = SoundStorage::CreateSound(sound_path);
+	if (!v_pSound) return;
 	
-	const std::size_t v_name_hash = std::hash<std::string>{}(sound_name);
+	const std::size_t v_nameHash = std::hash<std::string_view>{}(sound_name);
 
-	auto v_name_iter = SoundStorage::NameHashToSound.find(v_name_hash);
+	auto v_name_iter = SoundStorage::NameHashToSound.find(v_nameHash);
 	if (v_name_iter != SoundStorage::NameHashToSound.end())
 	{
 		DebugWarningL("The specified sound name is already occupied! (", sound_name, ")");
 		return;
 	}
 
-	SoundStorage::NameHashToSound.emplace(v_name_hash, SoundData{
-		.sound = v_sound,
+	SoundStorage::NameHashToSound.emplace(v_nameHash, SoundData{
+		.sound = v_pSound,
 		.effect_data = effect_data
 	});
 }
+
+///////////////////// FMOD HOOKS ///////////////////
 
 FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_release(FMOD::Studio::EventInstance* event_instance)
 {
@@ -120,7 +174,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_start(FMOD::Studio::EventInst
 	return FMODHooks::o_FMOD_Studio_EventInstance_start(event_instance);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_stop(FMOD::Studio::EventInstance* event_instance, FMOD_STUDIO_STOP_MODE mode)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_stop(
+	FMOD::Studio::EventInstance* event_instance,
+	FMOD_STUDIO_STOP_MODE mode)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -139,7 +195,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_stop(FMOD::Studio::EventInsta
 	return FMODHooks::o_FMOD_Studio_EventInstance_stop(event_instance, mode);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_get3DAttributes(FMOD::Studio::EventInstance* event_instance, FMOD_3D_ATTRIBUTES* attributes)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_get3DAttributes(
+	FMOD::Studio::EventInstance* event_instance,
+	FMOD_3D_ATTRIBUTES* attributes)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -156,7 +214,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_get3DAttributes(FMOD::Studio:
 	return FMODHooks::o_FMOD_Studio_EventInstance_get3DAttributes(event_instance, attributes);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_set3DAttributes(FMOD::Studio::EventInstance* event_instance, const FMOD_3D_ATTRIBUTES* attributes)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_set3DAttributes(
+	FMOD::Studio::EventInstance* event_instance,
+	const FMOD_3D_ATTRIBUTES* attributes)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -172,7 +232,10 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_set3DAttributes(FMOD::Studio:
 	return FMODHooks::o_FMOD_Studio_EventInstance_set3DAttributes(event_instance, attributes);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getVolume(FMOD::Studio::EventInstance* event_instance, float* volume, float* final_volume)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getVolume(
+	FMOD::Studio::EventInstance* event_instance,
+	float* volume,
+	float* final_volume)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -187,7 +250,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getVolume(FMOD::Studio::Event
 	return FMODHooks::o_FMOD_Studio_EventInstance_getVolume(event_instance, volume, final_volume);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(FMOD::Studio::EventInstance* event_instance, float volume)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(
+	FMOD::Studio::EventInstance* event_instance,
+	float volume)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -199,7 +264,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setVolume(FMOD::Studio::Event
 	return FMODHooks::o_FMOD_Studio_EventInstance_setVolume(event_instance, volume);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getDescription(FMOD::Studio::EventInstance* event_instance, FMOD::Studio::EventDescription** event_description)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getDescription(
+	FMOD::Studio::EventInstance* event_instance,
+	FMOD::Studio::EventDescription** event_description)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -211,7 +278,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getDescription(FMOD::Studio::
 	return FMODHooks::o_FMOD_Studio_EventInstance_getDescription(event_instance, event_description);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPlaybackState(FMOD::Studio::EventInstance* event_instance, FMOD_STUDIO_PLAYBACK_STATE* state)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPlaybackState(
+	FMOD::Studio::EventInstance* event_instance,
+	FMOD_STUDIO_PLAYBACK_STATE* state)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -226,7 +295,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPlaybackState(FMOD::Studio
 	return FMODHooks::o_FMOD_Studio_EventInstance_getPlaybackState(event_instance, state);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getTimelinePosition(FMOD::Studio::EventInstance* event_instance, int* position)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getTimelinePosition(
+	FMOD::Studio::EventInstance* event_instance,
+	int* position)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -235,7 +306,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getTimelinePosition(FMOD::Stu
 	return FMODHooks::o_FMOD_Studio_EventInstance_getTimelinePosition(event_instance, position);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setTimelinePosition(FMOD::Studio::EventInstance* event_instance, int position)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setTimelinePosition(
+	FMOD::Studio::EventInstance* event_instance,
+	int position)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -244,7 +317,10 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setTimelinePosition(FMOD::Stu
 	return FMODHooks::o_FMOD_Studio_EventInstance_setTimelinePosition(event_instance, position);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPitch(FMOD::Studio::EventInstance* event_instance, float* pitch, float* finalpitch)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPitch(
+	FMOD::Studio::EventInstance* event_instance,
+	float* pitch,
+	float* finalpitch)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -259,7 +335,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_getPitch(FMOD::Studio::EventI
 	return FMODHooks::o_FMOD_Studio_EventInstance_getPitch(event_instance, pitch, finalpitch);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setPitch(FMOD::Studio::EventInstance* event_instance, float pitch)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setPitch(
+	FMOD::Studio::EventInstance* event_instance,
+	float pitch)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
@@ -295,9 +373,9 @@ static FMOD_RESULT fake_event_desc_setReverb(FakeEventDescription* fake_event, f
 
 static FMOD_RESULT fake_event_desc_setReverbIndex(FakeEventDescription* fake_event, float reverb_idx)
 {
-	const int v_reverb_idx = static_cast<int>(reverb_idx);
-	if (v_reverb_idx >= 0 && v_reverb_idx <= 3)
-		fake_event->reverb_idx = v_reverb_idx;
+	const int v_reverbIdx = static_cast<int>(reverb_idx);
+	if (v_reverbIdx >= 0 && v_reverbIdx <= 3)
+		fake_event->reverb_idx = v_reverbIdx;
 	else
 		fake_event->reverb_idx = -1;
 
@@ -311,7 +389,7 @@ static FMOD_RESULT fake_event_desc_setPosition(FakeEventDescription* fake_event,
 	return FMOD_OK;
 }
 
-inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_fake_event_parameter_table =
+inline static std::unordered_map<std::string_view, v_fmod_set_parameter_function> g_fakeEventParameterTable =
 {
 	//Legacy audio parameters
 	{ "DLM_Pitch"    , fake_event_desc_setPitch       },
@@ -327,20 +405,26 @@ inline static std::unordered_map<std::string, v_fmod_set_parameter_function> g_f
 	{ "CAE_Position" , fake_event_desc_setPosition    }
 };
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(FMOD::Studio::EventInstance* event_instance, const char* name, float value, bool ignoreseekspeed)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventInstance_setParameterByName(
+	FMOD::Studio::EventInstance* event_instance,
+	const char* name,
+	float value,
+	bool ignoreseekspeed)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_instance);
 	if (v_fake_event->isValidHook())
 	{
-		auto v_iter = g_fake_event_parameter_table.find(std::string(name));
-		if (v_iter != g_fake_event_parameter_table.end())
+		auto v_iter = g_fakeEventParameterTable.find(std::string_view(name));
+		if (v_iter != g_fakeEventParameterTable.end())
 			return v_iter->second(v_fake_event->decodePointer(), value);
 	}
 
 	return FMODHooks::o_FMOD_Studio_EventInstance_setParameterByName(event_instance, name, value, ignoreseekspeed);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::EventDescription* event_desc, int* length)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(
+	FMOD::Studio::EventDescription* event_desc,
+	int* length)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_desc);
 	if (v_fake_event->isValidHook())
@@ -349,7 +433,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_getLength(FMOD::Studio::Ev
 	return FMODHooks::o_FMOD_Studio_EventDescription_getLength(event_desc, length);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studio::EventDescription* event_desc, FMOD::Studio::EventInstance** instance)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(
+	FMOD::Studio::EventDescription* event_desc,
+	FMOD::Studio::EventInstance** instance)
 {
 	SoundData* v_sound_data = SoundStorage::GetSoundData(reinterpret_cast<std::size_t>(event_desc));
 	if (v_sound_data)
@@ -365,7 +451,9 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_createInstance(FMOD::Studi
 	return FMODHooks::o_FMOD_Studio_EventDescription_createInstance(event_desc, instance);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_hasSustainPoint(FMOD::Studio::EventDescription* event_desc, bool* has_sustain)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_EventDescription_hasSustainPoint(
+	FMOD::Studio::EventDescription* event_desc,
+	bool* has_sustain)
 {
 	FakeEventDescription* v_fake_event = FAKE_EVENT_CAST(event_desc);
 	if (v_fake_event->isValidHook())
@@ -389,7 +477,10 @@ union FAKE_GUID_DATA
 	} fake;
 };
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_System_lookupID(FMOD::Studio::System* system, const char* path, FMOD_GUID* id)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_System_lookupID(
+	FMOD::Studio::System* system,
+	const char* path,
+	FMOD_GUID* id)
 {
 	const std::size_t sound_hash = std::hash<std::string>{}(std::string(path));
 	if (SoundStorage::SoundExists(sound_hash))
@@ -405,7 +496,10 @@ FMOD_RESULT FMODHooks::h_FMOD_Studio_System_lookupID(FMOD::Studio::System* syste
 	return FMODHooks::o_FMOD_Studio_System_lookupID(system, path, id);
 }
 
-FMOD_RESULT FMODHooks::h_FMOD_Studio_System_getEventByID(FMOD::Studio::System* system, const FMOD_GUID* id, FMOD::Studio::EventDescription** event_id)
+FMOD_RESULT FMODHooks::h_FMOD_Studio_System_getEventByID(
+	FMOD::Studio::System* system,
+	const FMOD_GUID* id,
+	FMOD::Studio::EventDescription** event_id)
 {
 	const FAKE_GUID_DATA* v_guid_data = reinterpret_cast<const FAKE_GUID_DATA*>(id);
 	if (v_guid_data->fake.v_secret == FMOD_HOOK_FAKE_GUID_SECRET)
@@ -533,36 +627,33 @@ void FMODHooks::UpdateReverbProperties()
 
 	DebugOutL("Injecting reverb properties");
 
-	FMOD_REVERB_PROPERTIES v_reverb_preset = FMOD_PRESET_MOUNTAINS;
-	v_pAudioMgr->fmod_system->setReverbProperties(0, &v_reverb_preset);
-	FMOD_REVERB_PROPERTIES v_reverb_preset2 = FMOD_PRESET_CAVE;
-	v_pAudioMgr->fmod_system->setReverbProperties(1, &v_reverb_preset2);
-	FMOD_REVERB_PROPERTIES v_reverb_preset3 = FMOD_PRESET_GENERIC;
-	v_pAudioMgr->fmod_system->setReverbProperties(2, &v_reverb_preset3);
-	FMOD_REVERB_PROPERTIES v_reverb_preset4 = FMOD_PRESET_UNDERWATER;
-	v_pAudioMgr->fmod_system->setReverbProperties(3, &v_reverb_preset4);
+	const FMOD_REVERB_PROPERTIES v_reverbPreset = FMOD_PRESET_MOUNTAINS;
+	v_pAudioMgr->fmod_system->setReverbProperties(0, &v_reverbPreset);
+	const FMOD_REVERB_PROPERTIES v_reverbPreset2 = FMOD_PRESET_CAVE;
+	v_pAudioMgr->fmod_system->setReverbProperties(1, &v_reverbPreset2);
+	const FMOD_REVERB_PROPERTIES v_reverbPreset3 = FMOD_PRESET_GENERIC;
+	v_pAudioMgr->fmod_system->setReverbProperties(2, &v_reverbPreset3);
+	const FMOD_REVERB_PROPERTIES v_reverbPreset4 = FMOD_PRESET_UNDERWATER;
+	v_pAudioMgr->fmod_system->setReverbProperties(3, &v_reverbPreset4);
 }
 
 void FMODHooks::Hook()
 {
-	HMODULE v_fmod_studio = GetModuleHandleA("fmodstudio.dll");
-	if (!v_fmod_studio)
+	HMODULE v_fmodStudio = GetModuleHandleA("fmodstudio.dll");
+	if (!v_fmodStudio)
 	{
 		DebugErrorL("Couldn't get fmodstudio.dll module");
 		return;
 	}
 
-	constexpr std::size_t v_hook_count = sizeof(g_fmodHookData) / sizeof(FMODHookData);
-	for (std::size_t a = 0; a < v_hook_count; a++)
+	for (const FMODHookData& v_curHook : g_fmodHookData)
 	{
-		FMODHookData& v_cur_hook = g_fmodHookData[a];
-
 		if (MH_CreateHook(
-			GetProcAddress(v_fmod_studio, v_cur_hook.proc_name),
-			v_cur_hook.detour,
-			v_cur_hook.original) != MH_OK)
+			GetProcAddress(v_fmodStudio, v_curHook.proc_name),
+			v_curHook.detour,
+			v_curHook.original) != MH_OK)
 		{
-			DebugErrorL("Couldn't hook the specified function: ", v_cur_hook.proc_name);
+			DebugErrorL("Couldn't hook the specified function: ", v_curHook.proc_name);
 			return;
 		}
 	}
