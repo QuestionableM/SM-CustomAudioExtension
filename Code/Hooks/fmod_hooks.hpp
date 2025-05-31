@@ -41,83 +41,49 @@ namespace FStudioSystem
 
 struct SoundEffectData
 {
-	bool is_3d;
-	int reverb_idx;
-	float min_distance;
-	float max_distance;
+	bool is3D;
+	int reverbIdx;
+	float fMinDistance;
+	float fMaxDistance;
 };
 
 struct SoundData
 {
 	FMOD::Sound* sound;
-	SoundEffectData effect_data;
+	SoundEffectData effectData;
 };
 
 #define FAKE_EVENT_DESC_MAGIC 13372281488
 
 struct FakeEventDescription
 {
-	FMOD::Sound* sound;
-	FMOD::Channel* channel;
+	FakeEventDescription(const SoundData* pSoundData, FMOD::Channel* pChannel);
 
-	float custom_volume = 1.0f;
-	int reverb_idx;
-
-	float min_distance;
-	float max_distance;
-
-	bool is_3d;
-
-	FakeEventDescription(const SoundData* snd_data, FMOD::Channel* v_channel)
-	{
-		this->sound = snd_data->sound;
-		this->channel = v_channel;
-
-		this->reverb_idx = snd_data->effect_data.reverb_idx;
-		this->min_distance = snd_data->effect_data.min_distance;
-		this->max_distance = snd_data->effect_data.max_distance;
-		this->is_3d = snd_data->effect_data.is_3d;
-	}
-
-	FMOD_RESULT setVolume(float new_volume);
-	FMOD_RESULT setPosition(float new_position);
+	FMOD_RESULT setVolume(const float newVolume);
+	FMOD_RESULT setPosition(const float newPosition);
 	FMOD_RESULT updateVolume();
 
 	void updateReverbData();
 	void playSound();
 
-	bool isPlaying() const
-	{
-		if (!this->channel) return false;
+	bool isPlaying() const;
+	bool isValidHook() const noexcept;
 
-		bool is_playing = false;
-		this->channel->isPlaying(&is_playing);
+	FakeEventDescription* encodePointer() noexcept;
+	FakeEventDescription* decodePointer() noexcept;
 
-		return is_playing;
-	}
+	FMOD_RESULT release();
 
-	inline bool isValidHook() const noexcept
-	{
-		return (reinterpret_cast<std::uintptr_t>(this) & (1ull << 63));
-	}
+	FMOD::Sound* m_pSound;
+	FMOD::Channel* m_pChannel;
 
-	inline FakeEventDescription* encodePointer() noexcept
-	{
-		const std::uintptr_t v_encoded_ptr = reinterpret_cast<std::uintptr_t>(this) | (1ULL << 63);
-		return reinterpret_cast<FakeEventDescription*>(v_encoded_ptr);
-	}
+	float m_fCustomVolume = 1.0f;
+	int m_reverbIdx;
 
-	inline FakeEventDescription* decodePointer() noexcept
-	{
-		const std::uintptr_t v_decoded_ptr = reinterpret_cast<std::uintptr_t>(this) & ~(1ULL << 63);
-		return reinterpret_cast<FakeEventDescription*>(v_decoded_ptr);
-	}
+	float m_fMinDistance;
+	float m_fMaxDistance;
 
-	FMOD_RESULT release()
-	{
-		delete this;
-		return FMOD_OK;/*return sound->release();*/
-	}
+	bool m_is3D;
 };
 
 class SoundStorage

@@ -41,7 +41,7 @@ inline static std::unordered_map<std::string_view, int> g_reverbStringToIdx =
 	{ "UNDERWATER", 3 }
 };
 
-int get_reverb_setting(const simdjson::dom::document_stream::iterator::value_type& reverbData)
+int getReverbSetting(const simdjson::dom::document_stream::iterator::value_type& reverbData)
 {
 	if (!reverbData.is_string()) return -1;
 
@@ -60,8 +60,8 @@ void load_min_max_distance(const simdjson::dom::element& curSound, SoundEffectDa
 	const auto v_minDistance = curSound["min_distance"];
 	const auto v_maxDistance = curSound["max_distance"];
 
-	effectData.min_distance = v_minDistance.is_number() ? JsonReader::GetNumber<float>(v_minDistance) : 0.0f;
-	effectData.max_distance = v_maxDistance.is_number() ? JsonReader::GetNumber<float>(v_maxDistance) : 10000.0f;
+	effectData.fMinDistance = v_minDistance.is_number() ? JsonReader::GetNumber<float>(v_minDistance) : 0.0f;
+	effectData.fMaxDistance = v_maxDistance.is_number() ? JsonReader::GetNumber<float>(v_maxDistance) : 10000.0f;
 }
 
 void load_effect_data(const simdjson::dom::element& curSound, SoundEffectData& effectData)
@@ -69,8 +69,8 @@ void load_effect_data(const simdjson::dom::element& curSound, SoundEffectData& e
 	const auto v_soundIs3dNode = curSound["is3D"];
 	const auto v_reverbNode = curSound["reverb"];
 
-	effectData.is_3d = v_soundIs3dNode.is_bool() ? v_soundIs3dNode.get_bool().value() : false;
-	effectData.reverb_idx = get_reverb_setting(v_reverbNode);
+	effectData.is3D = v_soundIs3dNode.is_bool() ? v_soundIs3dNode.get_bool().value() : false;
+	effectData.reverbIdx = getReverbSetting(v_reverbNode);
 
 	load_min_max_distance(curSound, effectData);
 }
